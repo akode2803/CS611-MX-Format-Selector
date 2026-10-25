@@ -154,22 +154,36 @@ def test_e4m1_one_nan():
     assert R.quantize_matrix(W, "MXFP_E4M1_onenan")[0][0, 0] == 4.0
 
 
-def test_bfp6_16_4_5():
+def test_bfp6_32_4_5():
     f = R.FORMATS["BFP6"]
+    assert (f["block"], f["exp_lo"], f["exp_hi"], f["rule"]) == (32, -8, 7, "floor")
+    W = np.zeros((1, 100))
+    W[0, 0] = 1.5; W[0, 1] = 0.1; W[0, 17] = 2.0 ** -12          # group 0: e = 0, step 1/16; 2^-12 -> 0
+    W[0, 32] = 300.0                                                # group 1: e = 8 -> clamped to 7: 248
+    W[0, 97] = -5.0                                                 # tail group of 4 (96..99): e = 2
+    Wh, st, (codes, scales) = R.quantize_matrix(W, "BFP6", return_codes=True)
+    assert len(scales[0]) == 4
+    assert [s if s < 8 else s - 16 for s in scales[0][:2]] == [0, 7]
+    assert Wh[0, 0] == 1.5 and Wh[0, 1] == F(2, 16) and Wh[0, 17] == 0.0
+    assert Wh[0, 32] == 248.0 and Wh[0, 97] == -5.0
+
+
+def test_bfp6_16_4_5():
+    f = R.FORMATS["BFP6_16_4"]
     assert (f["block"], f["exp_lo"], f["exp_hi"], f["rule"]) == (16, -8, 7, "floor")
     W = np.zeros((1, 100)); W[0, :100] = 0.0
     W[0, 0] = 1.5; W[0, 1] = 0.1                                   # group 0: e = 0, step 1/16
     W[0, 16] = 2.0 ** -14; W[0, 17] = 2.0 ** -12                   # group 1: e = -12 -> clamped to -8, step 2^-12
     W[0, 32] = 300.0                                                # group 2: e = 8 -> clamped to 7: 31/16*128 = 248
     W[0, 97] = -5.0                                                 # tail group of 4 (96..99): e = 2
-    Wh, st, (codes, scales) = R.quantize_matrix(W, "BFP6", return_codes=True)
+    Wh, st, (codes, scales) = R.quantize_matrix(W, "BFP6_16_4", return_codes=True)
     assert len(scales[0]) == 7 and st["n"] == 100
     assert [s if s < 8 else s - 16 for s in scales[0][:3]] == [0, -8, 7]   # 4-bit two's complement codes
     assert Wh[0, 0] == 1.5 and Wh[0, 1] == F(2, 16)                 # 0.1*16 = 1.6 -> 2
     assert Wh[0, 16] == 0.0 and Wh[0, 17] == 2.0 ** -12             # below step/2 -> 0; exactly one step -> kept
     assert Wh[0, 32] == 248.0 and st["sat"] >= 1
     assert Wh[0, 97] == -5.0
-    # BFP 32|8|5 with the floor rule is numerically MXINT6 (D1 sentence in the report)
+    # BFP 32|8|5 with the floor rule is numerically MXINT6 (A6 sentence in the report)
     Wr = np.random.default_rng(3).laplace(size=(10, 100))
     assert np.array_equal(R.quantize_matrix(Wr, "BFP6_32_8_floor")[0], R.quantize_matrix(Wr, "MXINT6")[0])
 
@@ -198,7 +212,9 @@ def test_opt_policy():
 def test_bits_per_element():
     b = R.bits_per_element("MXINT6")
     assert b["nominal"] == 6.25 and b["d11"] == 6.32 and b["padded"] == 8.0
-    b = R.bits_per_element("BFP6")                                  # 16|4|5: 7 groups per row
+    b = R.bits_per_element("BFP6")                                  # 32|4|5: 4 groups per row
+    assert b["nominal"] == 6.125 and b["d11"] == 6.16
+    b = R.bits_per_element("BFP6_16_4")                             # 16|4|5: 7 groups per row
     assert b["nominal"] == 6.25 and b["d11"] == 6.28
     assert R.bits_per_element("BFP6_row100")["d11"] == 6.08
 

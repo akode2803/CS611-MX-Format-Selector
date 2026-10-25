@@ -1,11 +1,16 @@
-# Format selector (Q2): our method, and the optional additions (Aryan, 25 Oct)
+# Format selector (Q2): the chosen method and the methods we compared it with
 
-> **Our method, the one we submit for Q2: the exact sketch, H-weighted** (`sketch_h`).
+> **The submitted description is section 6 of the report** (`Report_Group8_DatasetC_6bit.docx`), with W and X both
+> quantized as the primary setting (`results/selector_bench_wx.md`). The numbers in this note are for the weights-only
+> setting (`results/selector_bench_w.md`).
+
+> **The chosen method for Q2: the exact sketch, activation-weighted** (`sketch_h`).
 >
 >     import selector as S
->     best, scores = S.select_format(W, X_cal)     # scores = predicted error of every candidate
+>     best, scores = S.select_format(W, X_cal)            # W and X quantized (default)
+>     best, scores = S.select_format(W, X_cal, mode="w")  # weights only
 >
-> The assignment asks for one selection method; this is it (§1). Everything in §2 is an **optional addition**, not part of the method:
+> The assignment asks for one selection method; this is it (§1). §2 lists the methods we compared it with:
 > - brute-force references it is measured against
 > - ablations of it
 > - extensions
@@ -26,9 +31,9 @@ Everything uses `formats.py` v2.2 (five candidates, MXINT6 two's complement, BFP
 
 ```
 python test_selector.py
-python bench_selector.py --npz assignment_data.npz    # about 5 min; results/selector_bench.{csv,md}
-python bench_scaling.py                               # results/selector_scaling.md
-python x_stress.py --npz assignment_data.npz          # about 1 min; results/x_stress.md
+python bench_selector.py --mode w --npz assignment_data.npz  # about 5 min; results/selector_bench_w.{csv,md}
+python bench_scaling.py --mode w                      # results/selector_scaling_w.md
+python x_stress.py --mode w --npz assignment_data.npz # about 1 min; results/x_stress_w.md
 python make_selector_figures.py
 ```
 
@@ -73,7 +78,7 @@ For 6-bit formats every rounding midpoint and saturation point lies on a multipl
 - The error of every format is decomposed by octave offset and mantissa bin, so it explains why a format wins (flushed energy, clipping, step size). Q3 uses this.
 
 ### 1.4 Results of our method
-Truth is the held-out Y error (odd X columns) under the class rule; H comes from the even columns only (D6). Numbers are from `results/selector_bench.md` and `results/x_stress.md`.
+Truth is the held-out Y error (odd X columns) under the class rule; H comes from the even columns only (D6). Numbers are from `results/selector_bench_w.md` and `results/x_stress_w.md`.
 
 **Datasets A–E (the course data):**
 - Our method picks the held-out winner for A, C, D and E.
@@ -102,21 +107,21 @@ Truth is the held-out Y error (odd X columns) under the class rule; H comes from
 - **A and E change winner only under massive activations** (A: E2M3 → BFP6; E: BFP6 → E2M3). Our method follows both; weights only finds them in 20% and 40% of seeds.
 - **The X_cal-based choice for C costs at most 0.011 dB** on any X_test family. A, D and E can lose up to 0.7, 0.9 and 1.5 dB when X_test is far from X_cal (low rank or massive activations). No selector can avoid that without seeing X_test.
 
-**Cost at scale** (`results/selector_scaling.md`, LLM-like 4096 × 4096 = 16.8M weights):
+**Cost at scale** (`results/selector_scaling_w.md`, LLM-like 4096 × 4096 = 16.8M weights):
 - In NumPy the sketch takes 1.7 s against 2.0 s for brute force. Both are memory-bound.
 - The sketch's advantage is the shared single pass, not raw speed in NumPy.
 - The certified extension (§2) needs 0.14 s and rounds 0.10% of the blocks.
 
 ### 1.5 Limitations of our method
-- **Diagonal H only.** When X is strongly correlated (low rank), the realized error depends on the projection of ΔW onto a few directions, and no expectation predicts it. Top-1 is 83.7% there, against 98.1% for brute force with the full H. The optional `certified_rows_y` (§2) handles this case (97.1%) at 12× the cost.
-- **Class rule.** The method scores the class rule `ocp`. The `opt` policy is covered by the optional `sketch_opt_h` (§2).
+- **Diagonal H only.** When X is strongly correlated (low rank), the realized error depends on the projection of ΔW onto a few directions, and no expectation predicts it. Top-1 is 83.7% there, against 98.1% for brute force with the full H. The extension `certified_rows_y` (§2) handles this case (97.1%) at 12× the cost.
+- **Class rule.** The method scores the class rule `ocp`. The `opt` policy is covered by the extension `sketch_opt_h` (§2).
 - **BFP's exponent clamp** is modelled for d ≥ −8. Blocks more than 8 octaves above the clamp are not modelled.
 - **Test data.** The random families are ours. Only A–E are course data, and those are synthetic too.
 
-## 2. Optional additions (not part of the method)
+## 2. The methods we compared it with
 Every approach shares the interface `approach(W, h=None) -> {format: predicted error}`. `ROLE` in `selector.py` labels each one, and fig6 shows them all (our method is the star).
 
-Results on the random suite below; datasets and adversarial in `results/selector_bench.md`.
+Results on the random suite below; datasets and adversarial in `results/selector_bench_w.md`.
 
 | Role | Approach | Top-1 | Mean regret | ms | What it shows |
 |---|---|---|---|---|---|
@@ -136,7 +141,7 @@ Results on the random suite below; datasets and adversarial in `results/selector
 | extension | `certified_rows_y` | 95.6% | 0.017 dB | 9.60 | full-H brute force on an importance sample of rows ∝ ‖WᵢX‖²; reads a median 41% of rows; fixes low-rank X (97.1%) |
 | extension | `sketch_opt_h` | 89.5% (92.8% vs `opt` truth) | 0.036 dB vs `opt` | 19.4 | exact prediction of the `opt` policy: the per-block sketch scores each scale offset |
 | alternative | `hybrid_h` | 90.6% | 0.054 dB | 3.56 | M1 with the top octave rounded exactly |
-| alternative | `akash_hist_h` | 89.3% | 0.062 dB | 2.87 | Akash's `predictor.py`: expected error per histogram bin, block maxima exact |
+| alternative | `hist_pred_h` | 89.3% | 0.062 dB | 2.87 | histogram predictor (`predictor.py`): expected error per histogram bin, block maxima exact |
 | alternative | `m1_h` (`m1`) | 88.4% (80.6%) | 0.078 dB | 1.73 | per-element expected error: step²/12, flush z², clip (z − vmax)² |
 | alternative | `learned_tree` | 73.4% | 0.680 dB | 0.85 | CART (depth 4) on sparsity, kurtosis, ρ32, ρ16, φ, flush fraction; trained on 600 separate matrices |
 | alternative | `exh_rows10` | 70.1% | 0.838 dB | 0.86 | brute force on 10% of rows |
@@ -154,7 +159,7 @@ Results on the random suite below; datasets and adversarial in `results/selector
   - The `opt` policy: `sketch_opt_h`.
 - **Winners in the random suite:** BFP6 682, E2M3 229, E3M2 59, MXINT6 30. The class-rule winner equals the `opt` winner in 93.7% of matrices.
 
-**Per-block mixed formats** (excluded by D4; `results/block_study.md`). Letting each 32-block pick its own MX format, at +2 bits per block (6.40 bits/element), lowers the held-out error by 0.3–3.6% (C: 3.101% → 2.992%). MixFP4 (Zou et al. 2026) picks E2M1 or E1M2 per block and stores the choice in the unused sign bit of the FP8 E4M3 scale. Our E8M0 scale has no free bit.
+**Per-block mixed formats** (excluded by D4; `results/block_study_w.md`). Letting each 32-block pick its own MX format, at +2 bits per block (6.40 bits/element), lowers the held-out error by 0.3–3.6% (C: 3.101% → 2.992%). MixFP4 (Zou et al. 2026) picks E2M1 or E1M2 per block and stores the choice in the unused sign bit of the FP8 E4M3 scale. Our E8M0 scale has no free bit.
 
 ## 3. Ideas from the papers
 - **AWQ** (Lin et al. 2023): salience comes from activations, not weights. This supports way 2.

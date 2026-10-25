@@ -9,7 +9,7 @@ Tested: Akash's `formats_v2_changed_files.zip` (files dated 22 Oct 08:50) laid o
 ```
 python verification/test_reference_impl.py     # 16 golden tests on the reference itself
 python verification/crosscheck.py --selftest   # harness detects a single-ulp difference
-python verification/crosscheck.py --impl akash_adapter:quantize --data data/W_C.npy --x data/X_cal.npy
+python verification/crosscheck.py --impl formats_adapter:quantize --data data/W_C.npy --x data/X_cal.npy
 python verification/verify_C.py                # reference-only numbers on C
 ```
 Logs: `crosscheck_log.txt`, `crosscheck_report.json`, `verify_C_log.txt`, `clean_run_log.txt`.

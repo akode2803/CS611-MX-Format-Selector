@@ -129,10 +129,29 @@ def test_one_method_and_every_approach_has_a_role():
     assert set(S.ROLE) == set(S.APPROACHES) | {"exhaustive_y"}
     W = rng.standard_normal((32, 100)) * 3
     X = rng.standard_normal((100, 64))
-    best, sc = S.select_format(W, X)
+    best, sc = S.select_format(W, X, mode="w")
     ref = S.exhaustive(W, (X ** 2).sum(1))
     assert best == min(ref, key=ref.get)
     assert all(abs(sc[n] - ref[n]) <= 1e-9 * ref[n] for n in ref)
+
+
+def test_wx_mode_is_exact_for_both_terms_and_close_to_the_full_error():
+    W = rng.standard_normal((32, 100)) * 3
+    X = rng.standard_normal((100, 64)) * np.exp(rng.normal(0, 1, (100, 1)))
+    best, sc = S.select_format(W, X, mode="wx")
+    h, g = (X ** 2).sum(1), (W ** 2).sum(0)
+    a, b = S.exhaustive(W, h), S.exhaustive(X.T, g)
+    for n in S.CANDIDATES:
+        assert abs(sc[n] - (a[n] + b[n])) <= 1e-9 * (a[n] + b[n]), n
+    full = S.exhaustive_full_wx(W, X)          # the cross term is small next to the two terms
+    for n in S.CANDIDATES:
+        assert abs(sc[n] / full[n] - 1) < 0.1, (n, sc[n] / full[n])
+    for name in S.APPROACHES:                  # every approach runs in W+X mode
+        extra = {"tree": S.fit_tree(np.array([np.concatenate([S.features(rng.standard_normal((16, 64)))] * 2)
+                                              for _ in range(30)]), ["MXFP6_E2M3"] * 15 + ["BFP6"] * 15,
+                                    depth=1, min_leaf=5)} if name == "learned_tree" else {}
+        sc2, sec = S.run_wx(name, W, X, **extra)
+        assert set(sc2) == set(S.CANDIDATES) and sec >= 0, name
 
 
 def test_suite_is_deterministic():

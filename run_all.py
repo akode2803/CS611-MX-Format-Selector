@@ -1,4 +1,4 @@
-"""Regenerate every table, result file and figure from scratch with one command.  Owner: Akash.
+"""Regenerate every table, result file and figure from scratch with one command.
 
     python run_all.py                      # everything (dataset C; A-E too if the course npz is found)
     python run_all.py --fresh              # ignore the step checkpoint and recompute everything
@@ -9,10 +9,10 @@ What it does, in order (a progress bar shows the steps):
   1. tests        python test_formats.py; stops here if any test fails
   2. baseline     exhaustive ground truth on C: 5 candidates + all variants, weights only
                   -> results/baseline_C.csv/.json   (run_baseline.py --variants)
-  3. baseline_wx  the same with X quantized too (secondary, D2) -> results/baseline_C_wx.*
-  4. tables       results/tables/*.md and *.csv: main table, storage (D11), E4M1 conventions (D3),
-                  BFP family + ablation (D1), W vs W+X (D2), class diagnostics, MXINT6 sym vs tc
-                  (D10) and, if A-E are available, the per-dataset context table
+  3. baseline_wx  the same with X quantized too (the primary setting, A8) -> results/baseline_C_wx.*
+  4. tables       results/tables/*.md and *.csv: main table, storage (A14), E4M1 conventions (A4),
+                  BFP family + ablation (A6), W vs W+X (A8), class diagnostics, MXINT6 sym vs tc
+                  (A5) and, if A-E are available, the per-dataset context table
   5. scripts      the team's analysis scripts, output saved to results/logs/<script>.txt:
                   validate_predictor.py, explore.py, make_figures.py (figures/), and any of
                   OPTIONAL_SCRIPTS that exist (selector, scale study, Q3 study, reference impl)
@@ -50,7 +50,7 @@ DATA = os.path.join(HERE, "data")
 CANDIDATES = list(FORMATS)
 ALL = CANDIDATES + list(VARIANTS)
 
-# Teammates' scripts are run if they exist (edit this list when files are added).
+# Study scripts are run if they exist (edit this list when files are added).
 CORE_SCRIPTS = ["validate_predictor.py", "explore.py", "make_figures.py"]
 OPTIONAL_SCRIPTS = ["validate_selector.py", "scale_study.py", "q3_study.py",
                     "compare_reference.py", "stress.py"]
@@ -121,7 +121,7 @@ def yerr_heldout(W, X, Wq, Xq=None):
 
 # --------------------------------------------------------------------------- BFP ablation
 def bfp_ablation(W, g, exp_rule="floor", rounding="rne", ebits=4):
-    """BFP with a 5-bit magnitude, for the D1 ablation only (NOT a candidate definition).
+    """BFP with a 5-bit magnitude, for the A6 ablation only (NOT a candidate definition).
 
     exp_rule  "floor": E = floor(log2 amax) (class);  "floor+1": always one higher (never clips,
               wastes the top bit).  rounding "rne" (class) or "trunc" (toward zero).
@@ -159,7 +159,7 @@ def step_baseline(a):
 
 
 def step_baseline_wx(a):
-    code, out = run(["run_baseline.py", "--mode", "wx", "--fresh"], os.path.join(LOGS, "run_baseline_wx.txt"))
+    code, out = run(["run_baseline.py", "--mode", "wx", "--variants", "--fresh"], os.path.join(LOGS, "run_baseline_wx.txt"))
     if code:
         sys.exit(out)
     return [os.path.join(RESULTS, "baseline_C_wx.json"), os.path.join(LOGS, "run_baseline_wx.txt")]
@@ -174,20 +174,51 @@ def step_tables(a):
     out = []
     pols = ["ocp", "ceil", "opt", "opt_out"]
 
-    # T1 main table: primary metric = held-out Y error (D6); class rule next to optimised (D5)
+    # T1 main table: W and X both quantized (primary); primary metric = held-out Y error (A11);
+    # class rule next to the searched scales (A16); weights-only columns for comparison
     rows = []
-    for n in sorted(CANDIDATES, key=lambda n: base[n, "ocp"]["y_rel_err_heldout"]):
-        rows.append([n] + [pct(base[n, p]["y_rel_err_heldout"]) for p in pols]
-                    + [pct(base[n, "ocp"]["y_rel_err"]), pct(base[n, "opt"]["y_rel_err"]),
-                       pct(base[n, "ocp"]["w_rel_err"]), base[n, "ocp"]["bits_per_elem"]])
+    for n in sorted(CANDIDATES, key=lambda n: base_wx[n, "ocp"]["y_rel_err_heldout"]):
+        rows.append([n] + [pct(base_wx[n, p]["y_rel_err_heldout"]) for p in pols]
+                    + [pct(base[n, "ocp"]["y_rel_err_heldout"]), pct(base[n, "opt"]["y_rel_err_heldout"]),
+                       pct(base_wx[n, "ocp"]["x_rel_err"]), pct(base[n, "ocp"]["w_rel_err"]),
+                       base[n, "ocp"]["bits_per_elem"]])
+    n = "BFP6_g16"                               # comparison row: BFP with groups of 16 (not a candidate)
+    rows.append([n + " (comparison)"] + [pct(base_wx[n, p]["y_rel_err_heldout"]) for p in pols]
+                + [pct(base[n, "ocp"]["y_rel_err_heldout"]), pct(base[n, "opt"]["y_rel_err_heldout"]),
+                   pct(base_wx[n, "ocp"]["x_rel_err"]), pct(base[n, "ocp"]["w_rel_err"]), base[n, "ocp"]["bits_per_elem"]])
     out.append(write_table(
-        "T1_main_C", ["format"] + [f"held-out Y err % ({p})" for p in pols]
-        + ["all-X Y err % (ocp)", "all-X Y err % (opt)", "W err % (ocp)", "bits/elem"], rows,
-        "Dataset C, weights only (X stays FP32). Primary metric: relative Frobenius error of Y = W X on the "
-        "held-out odd columns of X_cal (opt_out fits H on the even columns only). 'ocp' is the class floor "
-        "rule; 'opt' searches the shared exponent e_ocp + {-2..+1} per block. Sorted by the class rule."))
+        "T1_main_C", ["format"] + [f"W+X held-out Y err % ({p})" for p in pols]
+        + ["W only held-out Y err % (ocp)", "W only held-out Y err % (opt)", "X err % (ocp)", "W err % (ocp)",
+           "bits/elem"], rows,
+        "Dataset C. Primary setting: W and X both quantized with the same format (X in blocks down its columns, "
+        "its reduction axis). Metric: relative Frobenius error of Y = W X on the held-out odd columns of X_cal "
+        "(opt_out fits its objective on the even columns only). 'ocp' is the class floor rule; 'opt' searches the "
+        "shared exponent e_ocp + {-2..+1} per block. Weights-only columns (X in full precision) for comparison. "
+        "Sorted by the class rule, W+X. Last row: BFP with groups of 16 (16|4|5), for comparison only."))
 
-    # T2 storage (D11)
+    # T9: W+X ranking with a paired bootstrap interval for the gap (A11 tie rule)
+    _, Xe = split_X(X)
+    Y = W @ Xe
+    rng = np.random.default_rng(0)
+    idx = rng.integers(0, Xe.shape[1], (2000, Xe.shape[1]))
+    yy = (Y ** 2).sum(0)
+    rows = []
+    for p in ("ocp", "ceil", "opt"):
+        col = {n: ((Y - quantize(W, n, policy=p)[0] @ quantize_X(Xe, n, policy=p)[0]) ** 2).sum(0) for n in CANDIDATES}
+        rel = {n: 100 * np.sqrt(col[n].sum() / yy.sum()) for n in CANDIDATES}
+        order = sorted(CANDIDATES, key=rel.get)
+        b, r = order[0], order[1]
+        boot = 100 * (np.sqrt(col[r][idx].sum(1) / yy[idx].sum(1)) - np.sqrt(col[b][idx].sum(1) / yy[idx].sum(1)))
+        lo, hi = np.percentile(boot, [2.5, 97.5])
+        rows.append([p, " < ".join(order), rel[r] - rel[b], lo, hi, "tie" if lo <= 0 <= hi else b])
+    out.append(write_table(
+        "T9_wx_ranking", ["policy", "ranking (best first)", "gap winner vs runner-up (pp)", "95% CI low", "95% CI high",
+                          "verdict"], rows,
+        "Dataset C, W and X quantized: ranking per scale policy and the paired bootstrap 95% interval of the gap "
+        "between winner and runner-up over the held-out columns (2000 resamples, seed 0). If the interval contains 0, "
+        "the top two are a tie."))
+
+    # T2 storage (A14)
     rows = []
     for n in ALL:
         lay = layout(n)
@@ -200,9 +231,9 @@ def step_tables(a):
         "T2_storage", ["format", "role", "block", "blocks/row (K=100)", "exp bits", "exp field range",
                        "total bits (100x100)", "bits/elem"], rows,
         "True storage per element for a 100x100 matrix, counting each row's tail block with its own "
-        "shared exponent (D11). Elements are 6 bits."))
+        "shared exponent (A14). Elements are 6 bits."))
 
-    # T3 E4M1 conventions (D3)
+    # T3 E4M1 conventions (A4)
     rows = []
     desc = {"MXFP6_E4M1": "no reserved code, vmax 384 (our choice)",
             "MXFP6_E4M1_nan1": "one NaN code (E4M3-style), vmax 256",
@@ -216,14 +247,15 @@ def step_tables(a):
         "E4M1 under three top-code conventions, dataset C. E2M3 (the winner) is "
         f"{pct(base['MXFP6_E2M3', 'ocp']['y_rel_err_heldout']):.3f}% under ocp, so E4M1 loses under every convention."))
 
-    # T4 BFP family and ablation (D1)
+    # T4 BFP family and ablation (A6)
     rows = []
-    for n, d in [("BFP6", "16|4|5 floor, RNE (candidate)"), ("BFP6_g32e8", "32|8|5 floor, RNE (= MXINT6_sym)"),
+    for n, d in [("BFP6", "32|4|5 floor, RNE (candidate)"), ("BFP6_g16", "16|4|5 floor, RNE (comparison)"),
+                 ("BFP6_g32e8", "32|8|5 floor, RNE (= MXINT6_sym)"),
                  ("BFP6_b32_ceil", "32|8|5 ceil, RNE (v1 BFP6)"), ("BFP6_row", "100|8|5 ceil, RNE (one block per row)"),
-                 ("MXINT6_sym", "reference: MXINT6_sym [-31, 31]"), ("MXINT6", "reference: MXINT6 (two's complement, D10)")]:
+                 ("MXINT6_sym", "reference: MXINT6_sym [-31, 31]"), ("MXINT6", "reference: MXINT6 (two's complement, A5)")]:
         rows.append([n, d, format_storage(n, 100, 100)[1]]
                     + [pct(base[n, p]["y_rel_err_heldout"]) for p in ("ocp", "ceil", "opt")])
-    for g, eb in ((16, 4), (32, 8)):
+    for g, eb in ((32, 4), (16, 4), (32, 8)):
         for rule in ("floor", "floor+1"):
             for rnd in ("rne", "trunc"):
                 Wq = bfp_ablation(W, g, rule, rnd, eb)
@@ -233,10 +265,11 @@ def step_tables(a):
         "T4_bfp_family", ["format", "definition g|e|m, exponent rule, rounding", "bits/elem",
                           "held-out Y err % (ocp)", "(ceil)", "(opt)"], rows,
         "BFP family on dataset C. BFP 32|8|5 with the floor rule is numerically identical to the symmetric MXINT6_sym "
-        "(test_v2_bfp_32_8_5_identical_to_mxint6_sym); the candidate MXINT6 also has the two's-complement code -32. Ablation rows are not candidates: they show that "
+        "(test_v2_bfp_32_8_5_identical_to_mxint6_sym); the candidate BFP6 32|4|5 differs from it only by its 4-bit "
+        "exponent range, and the candidate MXINT6 also has the two's-complement code -32. Ablation rows are not candidates: they show that "
         "truncation or an always-higher exponent is much worse than floor + RNE."))
 
-    # T5 W only vs W+X (D2)
+    # T5 W only vs W+X (A8)
     rows = []
     for n in sorted(CANDIDATES, key=lambda n: base[n, "ocp"]["y_rel_err_heldout"]):
         rows.append([n, pct(base[n, "ocp"]["y_rel_err_heldout"]), pct(base_wx[n, "ocp"]["y_rel_err_heldout"]),
@@ -265,20 +298,25 @@ def step_tables(a):
         rows, rows_tc = [], []
         for k in tqdm(list(Ws), desc="datasets A-E", leave=False):
             Wk = Ws[k]
-            res = {(n, p): yerr_heldout(Wk, XA, quantize(Wk, n, policy=p)[0]) for n in CANDIDATES for p in ("ocp", "opt")}
-            for p in ("ocp", "opt"):
-                order = sorted(CANDIDATES, key=lambda n: res[n, p])
-                rows.append([k, p] + [res[n, p] for n in CANDIDATES] + [order[0], res[order[1], p] - res[order[0], p]])
+            for mode in ("wx", "w"):
+                res = {(n, p): yerr_heldout(Wk, XA, quantize(Wk, n, policy=p)[0],
+                                            quantize_X(XA, n, policy=p)[0] if mode == "wx" else None)
+                       for n in CANDIDATES for p in ("ocp", "opt")}
+                for p in ("ocp", "opt"):
+                    order = sorted(CANDIDATES, key=lambda n: res[n, p])
+                    rows.append([k, mode, p] + [res[n, p] for n in CANDIDATES]
+                                + [order[0], res[order[1], p] - res[order[0], p]])
             for p in ("ocp", "opt"):
                 s = yerr_heldout(Wk, XA, quantize(Wk, "MXINT6_sym", policy=p)[0])
                 t = yerr_heldout(Wk, XA, quantize(Wk, "MXINT6", policy=p)[0])
                 rows_tc.append([k, p, s, t, t - s])
         out.append(write_table(
-            "T7_datasets_A_to_E", ["dataset", "policy"] + CANDIDATES + ["winner", "margin to 2nd (pp)"], rows,
-            "Held-out Y error (%) for all five datasets, weights only. Context for Q3 only; our assignment is C."))
+            "T7_datasets_A_to_E", ["dataset", "mode", "policy"] + CANDIDATES + ["winner", "margin to 2nd (pp)"], rows,
+            "Held-out Y error (%) for the five course datasets with the same X_cal; mode wx = W and X quantized "
+            "(primary), w = weights only."))
         out.append(write_table(
             "T8_mxint6_sym_vs_tc", ["dataset", "policy", "symmetric [-31,31]", "two's compl. [-32,31]", "difference (pp)"],
-            rows_tc, "MXINT6 integer range convention (D10), held-out Y error (%)."))
+            rows_tc, "MXINT6 integer range convention (A5), held-out Y error (%)."))
     else:
         W, X = load_C()
         rows_tc = [["C", p, yerr_heldout(W, X, quantize(W, "MXINT6_sym", policy=p)[0]),
@@ -286,7 +324,7 @@ def step_tables(a):
         rows_tc = [r + [r[3] - r[2]] for r in rows_tc]
         out.append(write_table(
             "T8_mxint6_sym_vs_tc", ["dataset", "policy", "symmetric [-31,31]", "two's compl. [-32,31]", "difference (pp)"],
-            rows_tc, "MXINT6 integer range convention (D10), held-out Y error (%). Datasets A-E: pass --npz."))
+            rows_tc, "MXINT6 integer range convention (A5), held-out Y error (%). Datasets A-E: pass --npz."))
         print("  (datasets A-E skipped: pass --npz path/to/assignment_data.npz or put it in data/)")
         t7 = os.path.join(TABLES, "T7_datasets_A_to_E.md")
         if os.path.exists(t7):                  # do not leave an old T7 looking current

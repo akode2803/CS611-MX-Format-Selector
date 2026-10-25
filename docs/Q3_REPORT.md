@@ -1,6 +1,6 @@
 # Q3: how outliers, sparsity and variation in scale affect the selection (dataset C, 6-bit)
 
-Rework of Nikita's draft, following the review (`docs/REVIEW_Q3_REPORT.md`) and issue #5. Every number comes from `python q3_study.py` (about 20 s), which writes `results/q3_study.md` and `figures/fig8`–`fig10`.
+Rework of Nikita's draft, following the review (`docs/REVIEW_Q3_REPORT.md`) and issue #5. Every number comes from `python q3_study.py --mode w` (about 20 s), which writes `results/q3_study_w.md` and `figures/fig8`–`fig10`.
 
 ## Setup
 | Item | Convention |
@@ -51,7 +51,7 @@ We replaced n weights of W_C by ±k·σ, with continuous magnitudes k·σ·U(0.7
   The block scale follows the strongest channel in each block, and only the formats with many exponent bits keep the weak channels representable.
 - **With a global metric and a nearly white X**, the weak channels contribute almost nothing to Y, so E2M3 stays best. If the activations amplified the weak channels, the H-weighted selector (way 2, `docs/SELECTOR.md`) would see it: weighting by (XXᵀ)_jj is exactly what moves the objective toward those channels.
 
-## 4. Block organisation (`python block_study.py`, `results/block_study.md`, fig11)
+## 4. Block organisation (`python block_study.py`, `results/block_study_w.md`, fig11)
 With K = 100 only the number of blocks per row sets the cost, and each format pays its own scale width (8 bits for MX, 4 bits for BFP).
 
 - **At equal block length, the integer grid gains most from shorter blocks.** Its error is ρ·4⁻⁴/12, and ρ falls from 8.05 (one block per row) to 0.96 (blocks of 2). E2M3 changes little: 3.39% → 2.86%. MXINT6 overtakes E2M3 from blocks of 8 down (2.83% vs 2.93%), but that costs 7.04 bits/element with an 8-bit scale.

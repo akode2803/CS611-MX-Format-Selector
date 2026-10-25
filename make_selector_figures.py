@@ -1,7 +1,7 @@
-"""Figures for the selector section (Aryan).   python make_selector_figures.py
-Reads results/selector_bench.csv (bench_selector.py) and results/selector_scaling.md
-(bench_scaling.py); writes figures/fig6_selector_accuracy_vs_cost.png and
-figures/fig7_selector_scaling.png."""
+"""Figures for the selector section.   python make_selector_figures.py
+Reads results/selector_bench_<mode>.csv (bench_selector.py) and results/selector_scaling_<mode>.md
+(bench_scaling.py) for mode wx (W and X quantized, primary) and w (weights only); writes
+figures/fig6_selector_accuracy_vs_cost.png, fig7_selector_scaling.png and their _w versions."""
 import csv
 import os
 import re
@@ -17,12 +17,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 INK, INK2, GRID, SURF = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
 GRID2 = "#8f8d88"            # leader lines
 # one colour per objective (<= 3 series in a scatter), reference palette slots 1-3
-OBJ = {"weights only (way 1)": "#2a78d6", "H-weighted (way 2)": "#eb6834", "full Y on fit columns": "#1baf7a"}
+OBJ = {"no activation weighting (way 1)": "#2a78d6", "activation-weighted (way 2)": "#eb6834",
+       "full output on fit columns": "#1baf7a"}
 LABEL = {"exhaustive_w": "brute force", "exhaustive_h": "brute force", "exhaustive_y": "brute force, full H",
          "sketch": "exact sketch", "sketch_h": "exact sketch", "sketch_nb1_h": "sketch 1 bin",
          "sketch_nb4_h": "4 bins", "sketch_nb16_h": "16 bins", "certified_is_h": "certified (IS)",
          "certified_h": "certified (uniform)", "sketch_s10_h": "sketch 10% sample", "closed_form": "closed form",
-         "closed_form_h": "closed form", "akash_hist_h": "predictor.py", "m1": "M1", "m1_h": "M1",
+         "closed_form_h": "closed form", "hist_pred_h": "histogram predictor", "m1": "M1", "m1_h": "M1",
          "hybrid_h": "hybrid", "exh_rows10": "brute 10% rows", "learned_tree": "learned tree",
          "ant_rule": "ANT shape rule", "fit_gauss": "Gaussian fit", "fit_laplace": "Laplace fit", "fit_t": "Student-t fit",
          "sketch_opt_h": "exact sketch (opt)", "exhaustive_opt": "brute force + scale\nsearch (ANT/MoFQ)",
@@ -31,8 +32,8 @@ LABEL = {"exhaustive_w": "brute force", "exhaustive_h": "brute force", "exhausti
 
 def objective(a):
     if a in ("exhaustive_y", "certified_rows_y"):
-        return "full Y on fit columns"
-    return "H-weighted (way 2)" if a.endswith("_h") else "weights only (way 1)"
+        return "full output on fit columns"
+    return "activation-weighted (way 2)" if a.endswith("_h") else "no activation weighting (way 1)"
 
 
 def style(ax):
@@ -72,12 +73,13 @@ def place_labels(fig, ax, pts, order):
     for k in order:
         x, y, text, kw = pts[k]
         best = None                              # (overlap area, annotation, box)
-        for rad in ((14, 18, 24) if k == S.METHOD else (6, 10, 15, 21, 28, 36, 46, 58)):
+        for rad in ((14, 18, 24) if k == S.METHOD else (6, 10, 15, 21, 28, 36, 46, 58, 72, 88, 106)):
             for dx, dy, ha, va in dirs:
                 t = ax.annotate(text, (x, y), xytext=(dx * rad, dy * rad), textcoords="offset points", ha=ha, va=va,
                                 **kw, arrowprops=(dict(arrowstyle="-", color=GRID2, lw=0.7, shrinkA=1, shrinkB=3)
                                                   if rad > 6 else None))
-                bb = t.get_window_extent(r).padded(1.5 * scale)
+                t.update_positions(r)                # the text box alone: a leader line may cross markers
+                bb = matplotlib.text.Text.get_window_extent(t, r).padded(1.5 * scale)
                 box = (bb.x0, bb.y0, bb.x1, bb.y1)
                 if not (bb.x0 >= axbox.x0 and bb.x1 <= axbox.x1 and bb.y0 >= axbox.y0 and bb.y1 <= axbox.y1):
                     t.remove()
@@ -98,8 +100,11 @@ def place_labels(fig, ax, pts, order):
             placed.append(best[2])
 
 
-def fig6():
-    rows = [r for r in csv.DictReader(open(os.path.join(HERE, "results", "selector_bench.csv"))) if r["suite"] == "random"]
+def fig6(mode="wx"):
+    path = os.path.join(HERE, "results", f"selector_bench_{mode}.csv")
+    if not os.path.exists(path):
+        return
+    rows = [r for r in csv.DictReader(open(path)) if r["suite"] == "random"]
     # closed_form and m1 without H sit on top of their H versions / of brute force: plot one of each
     names = [a for a in dict.fromkeys(r["approach"] for r in rows)
              if a not in ("closed_form", "m1", "fit_laplace", "sketch_opt_h", "certified_h")]
@@ -119,7 +124,7 @@ def fig6():
             x, y = stats[a][0], max(stats[a][k], 1e-3)
             if a == S.METHOD:
                 ax.scatter(x, y, s=260, marker="*", color=OBJ[objective(a)], edgecolor=INK, linewidth=1.0, zorder=5)
-                pts[a] = (x, y, "OUR METHOD: exact sketch, H-weighted", dict(fontsize=8.5, color=INK, weight="bold"))
+                pts[a] = (x, y, "CHOSEN METHOD: exact sketch, activation-weighted", dict(fontsize=8.5, color=INK, weight="bold"))
             else:
                 ax.scatter(x, y, s=34, color=OBJ[objective(a)], edgecolor=SURF, linewidth=1.5, zorder=3, alpha=0.85)
                 pts[a] = (x, y, LABEL[a], dict(fontsize=7, color=INK2))
@@ -133,24 +138,26 @@ def fig6():
         ax.set_xlabel("median time per 128x128 matrix (ms, log scale)", color=INK, fontsize=9)
         ax.set_ylabel(ylab, color=INK, fontsize=9)
         allpts.append((ax, pts))
-    fig.suptitle(f"Accuracy vs cost of the format selector: 1000 random matrices, {nx} activation families",
-                 color=INK, fontsize=11, x=0.01, ha="left", y=0.99, va="top")
-    fig.text(0.01, 0.935, "\u2605 = our method, the one we submit: the same picks as brute force with the diagonal "
-             "of H (exact, tested), from one pass over W and without quantizing it.\nEvery other point is an optional addition: brute-force "
-             "references, ablations of the method, extensions and the alternatives we tried (docs/SELECTOR.md).",
+    what = "W and X quantized" if mode == "wx" else "weights only quantized"
+    fig.suptitle(f"Accuracy vs cost of format selection ({what}): {len({r['matrix'] for r in rows})} random matrices, "
+                 f"{nx} activation families", color=INK, fontsize=11, x=0.01, ha="left", y=0.99, va="top")
+    fig.text(0.01, 0.935, "\u2605 = the chosen method: the same picks as brute force with the same (diagonal) objective "
+             "(exact, tested), without quantizing anything.\nThe other points are the methods we compared it with: "
+             "brute-force references, variants of the method, extensions and alternative methods.",
              fontsize=8, color=INK2, ha="left", va="top", linespacing=1.5)
-    handles = [plt.Line2D([], [], marker="*", ls="", color=OBJ["H-weighted (way 2)"], markeredgecolor=INK,
-                          markersize=13, label="our method (H-weighted)")]
+    handles = [plt.Line2D([], [], marker="*", ls="", color=OBJ["activation-weighted (way 2)"], markeredgecolor=INK,
+                          markersize=13, label="chosen method")]
     handles += [plt.Line2D([], [], marker="o", ls="", color=c, markersize=6, label=l) for l, c in OBJ.items()]
     axs[1].legend(handles=handles, frameon=False, fontsize=8, loc="upper right", labelcolor=INK)
     fig.tight_layout(rect=(0, 0, 1, 0.89))
     for ax, pts in allpts:
         place_labels(fig, ax, pts, order)
-    fig.savefig(os.path.join(HERE, "figures", "fig6_selector_accuracy_vs_cost.png"), dpi=160, facecolor=SURF)
+    fig.savefig(os.path.join(HERE, "figures", "fig6_selector_accuracy_vs_cost" + ("" if mode == "wx" else "_w") + ".png"),
+                dpi=160, facecolor=SURF)
 
 
-def fig7():
-    path = os.path.join(HERE, "results", "selector_scaling.md")
+def fig7(mode="wx"):
+    path = os.path.join(HERE, "results", f"selector_scaling_{mode}.md")
     if not os.path.exists(path):
         return
     pts = []
@@ -162,8 +169,8 @@ def fig7():
     P = np.array(pts)[1:]                       # drop the 128x128 warm-up row (kernel tables are built there)
     fig, ax = plt.subplots(figsize=(6, 4), facecolor=SURF)
     style(ax)
-    ser = (("brute force, quantize all 5 (reference)", 1, "#2a78d6"), ("exact sketch (OUR METHOD)", 2, "#eb6834"),
-           ("certified, importance-sampled (optional extension)", 3, "#1baf7a"))
+    ser = (("brute force, quantize all 5 (reference)", 1, "#2a78d6"), ("exact sketch (CHOSEN METHOD)", 2, "#eb6834"),
+           ("certified, importance-sampled (extension)", 3, "#1baf7a"))
     for lab, i, c in ser:
         ax.plot(P[:, 0], P[:, i], color=c, lw=2, marker="o", markersize=6, markeredgecolor=SURF, markeredgewidth=2, label=lab)
     for x, y, f in zip(P[:, 0], P[:, 3], P[:, 4]):
@@ -175,14 +182,17 @@ def fig7():
     ax.set_yscale("log")
     ax.set_xlabel("weights in the matrix (log scale)", color=INK, fontsize=9)
     ax.set_ylabel("selection time (s, log scale)", color=INK, fontsize=9)
-    ax.set_title("Selection cost vs matrix size (LLM-like weights, H-weighted)", color=INK, fontsize=10, loc="left")
+    ax.set_title("Selection cost vs matrix size (LLM-like weights, " + ("W and X quantized)" if mode == "wx" else "weights only)"),
+                 color=INK, fontsize=10, loc="left")
     ax.legend(frameon=False, fontsize=8, loc="upper left", labelcolor=INK)
     ax.set_xlim(P[0, 0] / 1.6, P[-1, 0] * 1.6)
     ax.set_ylim(P[:, 1:4].min() / 2.5, P[:, 1:4].max() * 2)
     fig.tight_layout()
-    fig.savefig(os.path.join(HERE, "figures", "fig7_selector_scaling.png"), dpi=160, facecolor=SURF)
+    fig.savefig(os.path.join(HERE, "figures", "fig7_selector_scaling" + ("" if mode == "wx" else "_w") + ".png"),
+                dpi=160, facecolor=SURF)
 
 
 if __name__ == "__main__":
-    fig6()
-    fig7()
+    for m in ("wx", "w"):
+        fig6(m)
+        fig7(m)

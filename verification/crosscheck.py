@@ -1,6 +1,6 @@
 """
 Bit-exact cross-check: reference implementation (reference_impl.py) vs any other quantizer
-(Akash's formats.py, Aryan's prototype, ...).
+(formats.py, earlier prototypes, ...).
 
 Usage
   python crosscheck.py --selftest                       # proves the harness catches a 1-ulp bug
@@ -9,7 +9,7 @@ Usage
 
 The function under test must have the signature
     fn(W: np.ndarray, fmt: str, rule: str) -> W_hat: np.ndarray (same shape, dequantized)
-with fmt in FORMAT_MAP keys and rule in {'floor','ceil'}. If Akash's API differs, write a
+with fmt in FORMAT_MAP keys and rule in {'floor','ceil'}. If an implementation's API differs, write a
 3-line adapter function and point --impl at it; do NOT modify reference_impl.py to match his code.
 """
 import argparse, importlib, json, math, sys
@@ -26,7 +26,8 @@ FORMAT_MAP = {
     "MXINT6": ["floor", "ceil", "opt"],
     "MXINT6_twos": ["floor", "ceil", "opt"],
     "BFP6_32_8_floor": ["floor", "ceil", "opt"],
-    "BFP6": ["floor", "ceil", "opt"],            # D1: 16|4|5, 4-bit exponent [-8, 7], floor, RNE
+    "BFP6": ["floor", "ceil", "opt"],            # A6: 32|4|5, 4-bit exponent [-8, 7], floor, RNE
+    "BFP6_16_4": ["floor", "ceil", "opt"],       # 16|4|5 (comparison row)
     "BFP6_32_8_ceil": ["ceil"],   # old repo BFP6
     "BFP6_row100": ["ceil", "floor", "opt"],
 }
@@ -77,6 +78,13 @@ def adversarial_matrix(seed=0):
     r[32:48] = rng.uniform(-1, 1, 16) * 300; r[32] = 1000.0                   # e = 9 -> clamped to 7, saturates at 248
     r[48:64] = rng.uniform(-1, 1, 16) * 200; r[48] = np.nextafter(256.0, 0)  # e = 7 exactly at the top
     r[64:80] = rng.uniform(-1, 1, 16) * 2.0 ** -8; r[64] = 2.0 ** -8          # e = -8 exactly at the bottom
+    rows.append(r)
+    # BFP 32|4|5: the same cases for groups 32 wide
+    r = np.zeros(K)
+    r[0:32] = rng.uniform(-1, 1, 32) * 2.0 ** -10; r[0] = 2.0 ** -10          # e = -10 -> clamped to -8
+    r[32:64] = rng.uniform(-1, 1, 32) * 300; r[32] = 1000.0                   # e = 9 -> clamped to 7, saturates at 248
+    r[64:96] = rng.uniform(-1, 1, 32) * 200; r[64] = np.nextafter(256.0, 0)  # e = 7 exactly at the top
+    r[96:100] = rng.uniform(-1, 1, 4) * 2.0 ** -8; r[96] = 2.0 ** -8          # tail: e = -8 exactly at the bottom
     rows.append(r)
     # negative block maxima: two's complement may use code -32, symmetric may not
     r = rng.uniform(-1, 1, K)

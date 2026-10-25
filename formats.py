@@ -1,44 +1,45 @@
-"""6-bit candidate formats for CS611 A1, Group 8 (dataset C).  Owner: Akash.   Version 2.2 (24 Oct: D10 revised; D13 literal ceil).
+"""6-bit candidate formats for CS611 A1, Group 8 (dataset C).   Version 3.0 (25 Oct: BFP6 = 32|4|5).
 
-Conventions. [CLASS] = Lecture 19 OCP-MX notebook / board notes; [TEAM Dn] = our decision
-from TEAM_PLAN.md section 1, to be stated and defended in the report.
+Conventions. [CLASS] = Lecture 19 OCP-MX notebook / board notes; [An] = our assumption An,
+listed with its reason in Section 2.4 of the report.
 
   Blocks    MX: 32 consecutive values along each row of W, the reduction axis of Y = W @ X.
             K = 100 -> blocks of 32, 32, 32 and a tail of 4 real values.            [CLASS]
             Class zero-pads the tail; that gives exactly the same quantized values,
             because padded zeros never change a block's max. Statistics count only
-            real elements. Storage counts the tail with its own scale.          [TEAM D11]
+            real elements. Storage counts the tail with its own scale.          [A14]
   Scale     power of two 2^e. MX stores e as E8M0, clamped to [-127, 127].         [CLASS]
             An all-zero block stores exponent 0 (scale 1); its elements stay 0.    [CLASS]
   Policies  "ocp"   e = floor(log2 amax) - emax_elem                     [CLASS default]
             "ceil"  smallest power-of-two scale that clips nothing; equal to the class
                     notebook's "floor rule, +1 if the max does not fit"  [CLASS follow-up]
-                    Two's complement: a negative max fits down to code -32 (v2.2, D13)
+                    Two's complement: a negative max fits down to code -32 (v2.2, A17)
             "opt"   per block, try e_ocp + {-2, -1, 0, +1}, keep the lowest error:
                     weight MSE, or output-aware r^T H_bb r with H = X X^T if H is given.
                     Ties keep the offset closest to 0. The scale stays a power of two in
-                    the same exponent field, so the format definition is unchanged. [TEAM D5]
+                    the same exponent field, so the format definition is unchanged. [A16]
   Elements  round to nearest, ties to even, then saturate at vmax (no Inf/NaN).    [CLASS]
             FP subnormals: fixed spacing 2^(emin - m) below 2^emin.               [CLASS]
 
   The five candidates (FORMATS):
   MXFP6_E3M2  m=2, bias 3, emin=-2, emax=4, vmax=28                                [CLASS]
   MXFP6_E2M3  m=3, bias 1, emin=0,  emax=2, vmax=7.5                               [CLASS]
-  MXFP6_E4M1  m=1, bias 7, emin=-6, emax=8, vmax=1.5*2^8=384, no reserved code  [TEAM D3]
+  MXFP6_E4M1  m=1, bias 7, emin=-6, emax=8, vmax=1.5*2^8=384, no reserved code  [A4]
   MXINT6      S I F F F F: k * 2^-4, two's complement k in [-32, 31] (class INT notes),
               vmax = 31/16 (most negative -2), emax_elem = 0, S = 2^floor(log2 amax)
-                                                        [board notes; TEAM D10, revised 23 Oct]
-  BFP6        g|e|m = 16|4|5: groups of 16, ONE 4-bit shared exponent E = floor(log2 amax)
+                                                        [board notes; A5, revised 23 Oct]
+  BFP6        g|e|m = 32|4|5: groups of 32, ONE 4-bit shared exponent E = floor(log2 amax)
               clamped to [-8, 7], sign + 5-bit magnitude M in [0, 31], value = +-M * 2^(E-4),
-              RNE, saturate at M = 31.                                         [TEAM D1]
+              RNE, saturate at M = 31.                                         [A6]
 
   Variants (VARIANTS; sensitivity rows, never in the main ranking):
-  MXFP6_E4M1_v192  top exponent code reserved (IEEE-like) -> emax=7, vmax=192     [TEAM D3]
-  MXFP6_E4M1_nan1  one NaN code (E4M3-style, S.1111.1) -> emax=8, vmax=256        [TEAM D3]
-  BFP6_g32e8       BFP 32|8|5, floor rule: numerically IDENTICAL to MXINT6_sym    [TEAM D1]
+  MXFP6_E4M1_v192  top exponent code reserved (IEEE-like) -> emax=7, vmax=192     [A4]
+  MXFP6_E4M1_nan1  one NaN code (E4M3-style, S.1111.1) -> emax=8, vmax=256        [A4]
+  BFP6_g16         BFP 16|4|5: groups of 16, otherwise as BFP6 (6.28 bits/elem)  [A6]
+  BFP6_g32e8       BFP 32|8|5, floor rule: numerically IDENTICAL to MXINT6_sym    [A6]
   BFP6_b32_ceil    v1's BFP6: block 32, 8-bit exponent, "ceil" rule (= MXINT6_sym under ceil)
   BFP6_row         one block per row, 8-bit exponent, "ceil" rule (6.08 bits/elem)
-  MXINT6_sym       symmetric k in [-31, 31] (OCP style; the MXINT6 of v1/v2)       [TEAM D10]
+  MXINT6_sym       symmetric k in [-31, 31] (OCP style; the MXINT6 of v1/v2)       [A5]
 
   Stored exponent field. quantize() returns exps = the value written to the shared-exponent
   field. For MX formats that is the E8M0 scale exponent e. For BFP it is E, and the step of
@@ -52,7 +53,7 @@ from TEAM_PLAN.md section 1, to be stated and defended in the report.
 Public API (everything the other scripts use):
   FORMATS, VARIANTS, POLICIES, BLOCK, spec(name), layout(name)
   quantize(W, name, block=None, shift_search=0, H=None, policy=None, return_stats=False)
-  quantize_X(X, name, ...)             W+X mode: blocks run down the columns of X   [TEAM D2]
+  quantize_X(X, name, ...)             W+X mode: blocks run down the columns of X   [A8]
   metrics(W, Wq, X, Xq=None), split_X(X), exhaustive(W, X, ..., mode="w"|"wx"), ranking(rows)
   save_results(rows, path), storage_bits(n_rows, n_cols, block, elem_bits, scale_bits),
   format_storage(name, n_rows, n_cols, block=None), blocks(n, block), default_exp(...),
@@ -72,7 +73,7 @@ except ImportError:                     # pragma: no cover
     def tqdm(it, **_):
         return it
 
-FORMATS_VERSION = "v2.2"
+FORMATS_VERSION = "v3.0"
 BLOCK = 32
 E8M0_MIN, E8M0_MAX = -127, 127
 OPT_OFFSETS = (-2, -1, 0, 1)
@@ -118,7 +119,7 @@ FORMATS = {
     "MXFP6_E3M2": ("fp", dict(ebits=3, mbits=2, bias=3, maxval=28.0), 4),
     "MXFP6_E2M3": ("fp", dict(ebits=2, mbits=3, bias=1, maxval=7.5), 2),
     "MXFP6_E4M1": ("fp", dict(ebits=4, mbits=1, bias=7, maxval=384.0), 8),
-    "MXINT6":     ("int", dict(frac_bits=4, kmax=31, kmin=-32), 0),   # D10: two's complement
+    "MXINT6":     ("int", dict(frac_bits=4, kmax=31, kmin=-32), 0),   # A5: two's complement
     "BFP6":       ("bfp", dict(kmax=31), 4),   # integer magnitude M; 31 = 1.9375 * 2^4
 }
 # Variants are kept out of FORMATS so that code looping over FORMATS still sees
@@ -126,6 +127,7 @@ FORMATS = {
 VARIANTS = {
     "MXFP6_E4M1_v192": ("fp", dict(ebits=4, mbits=1, bias=7, maxval=192.0), 7),
     "MXFP6_E4M1_nan1": ("fp", dict(ebits=4, mbits=1, bias=7, maxval=256.0), 8),
+    "BFP6_g16":        ("bfp", dict(kmax=31), 4),
     "BFP6_g32e8":      ("bfp", dict(kmax=31), 4),
     "BFP6_b32_ceil":   ("bfp", dict(kmax=31), 4),
     "BFP6_row":        ("bfp", dict(kmax=31), 4),
@@ -139,7 +141,8 @@ VARIANTS = {
 #   field       range of the stored exponent field (clamped)
 LAYOUT_DEFAULT = dict(block=BLOCK, policy="ocp", scale_bits=8, field=(E8M0_MIN, E8M0_MAX))
 LAYOUT = {
-    "BFP6":          dict(block=16, scale_bits=4, field=(-8, 7)),          # D1: 16|4|5
+    "BFP6":          dict(block=32, scale_bits=4, field=(-8, 7)),          # A6: 32|4|5
+    "BFP6_g16":      dict(block=16, scale_bits=4, field=(-8, 7)),          # 16|4|5, comparison row
     "BFP6_b32_ceil": dict(policy="ceil"),
     "BFP6_row":      dict(block="row", policy="ceil"),
 }
@@ -220,12 +223,12 @@ def _ceil_exp(a, vmax):
 def default_exp(kind, p, emax, amax, policy=None, field=(E8M0_MIN, E8M0_MAX), clamp=True, amax_neg=None):
     """Scale exponent e (scale = 2^e) for blocks with max |w| = amax.
 
-    policy None -> "ocp" (v1 used "ceil" for BFP; D1 makes the floor rule the BFP default).
+    policy None -> "ocp" (v1 used "ceil" for BFP; A6 makes the floor rule the BFP default).
     field: range of the STORED exponent; for BFP the stored value is e + emax_elem.
     All-zero blocks store 0. clamp=False returns the unclamped exponent.
     amax_neg (ceil only): if given, amax is the largest POSITIVE value and amax_neg the largest
     magnitude of a negative value, so an asymmetric code (two's complement: -32 is a code)
-    is "clipping nothing" when amax <= vmax * 2^e and amax_neg <= |vmin| * 2^e. [TEAM, 24 Oct]
+    is "clipping nothing" when amax <= vmax * 2^e and amax_neg <= |vmin| * 2^e. [A17]
     """
     amax = np.asarray(amax, dtype=np.float64)
     policy = policy or "ocp"
@@ -260,7 +263,7 @@ def storage_bits(n_rows, n_cols, block=BLOCK, elem_bits=6, scale_bits=8):
 
 
 def format_storage(name, n_rows, n_cols, block=None, elem_bits=6):
-    """True storage of a format on an n_rows x n_cols matrix (D11): (total bits, bits/elem)."""
+    """True storage of a format on an n_rows x n_cols matrix (A14): (total bits, bits/elem)."""
     lay = layout(name)
     return storage_bits(n_rows, n_cols, block or lay["block"], elem_bits, lay["scale_bits"])
 
@@ -361,7 +364,7 @@ def quantize(W, name, block=None, shift_search=0, H=None, policy=None, return_st
 
 
 def quantize_X(X, name, **kw):
-    """W+X mode (D2): quantize the input X of Y = W @ X along ITS reduction axis.
+    """W+X mode (A8): quantize the input X of Y = W @ X along ITS reduction axis.
 
     The reduction axis of X is axis 0, so blocks run down each column of X
     (each column = one input vector, as the class notebook quantizes activations
@@ -441,7 +444,7 @@ def exhaustive(W, X, names=None, policies=EXHAUSTIVE_POLICIES, block=None,
     policies  "ocp", "ceil", "opt" (exponent search on weight MSE, uses no X) and
               "opt_out" (exponent search on the output-aware error, H fitted on the
               even columns of X only).
-    mode      "w"  weights only, X stays FP32 (primary result, D2)
+    mode      "w"  weights only, X stays FP32 (the secondary setting, A8)
               "wx" X is quantized too, with the same format and policy, blocks down its
                    columns. For "opt_out" X's search uses H_X = W^T W (the error of Y
                    caused by an error dx in one column is W dx).

@@ -19,26 +19,27 @@ and the predicted output error of format f is
 Building the histogram is one pass over W (shared by all formats); scoring a
 format costs O(#bins), independent of the matrix size.
 
-BFP6 (D1: 16|4|5, floor rule) is the integer grid k * 2^(E-4) on blocks of 16, so
-build_stats() also keeps the same statistics for 16-value blocks and BFP6 is scored
-on those (fixed 24 Oct: v1 scored the old block-32 "ceil" BFP6). Not modelled: the
+BFP6 (A6: 32|4|5, floor rule) is the integer grid k * 2^(E-4) on blocks of BFP_BLOCK, so
+build_stats() also keeps the same statistics for BFP-sized blocks and BFP6 is scored
+on those (with 32-value groups these equal the MX statistics). Not modelled: the
 4-bit exponent clamp of BFP6 and the extra -32 code of two's-complement MXINT6.
 The two histograms per block size are split by whether the block max u_max > 31/16
 (a leftover of the v1 "ceil" BFP6; harmless, the split is format-independent).
 """
 import numpy as np
-from formats import FORMATS, blocks, BLOCK, elem_round, floor_log2
+from formats import FORMATS, blocks, BLOCK, elem_round, floor_log2, layout
 
 U_LO, U_HI, NBINS = 2.0 ** -16, 2.0, 512
 EDGES = np.geomspace(U_LO, U_HI, NBINS + 1)
 CENTERS = np.sqrt(EDGES[:-1] * EDGES[1:])
 BFP_SPLIT = 31 / 16
+BFP_BLOCK = layout("BFP6")["block"]
 
 
 def build_stats(W, H=None, block=BLOCK):
-    """One pass over W -> (hist, maxima, stats on 16-blocks for BFP6) of normalised magnitude u."""
+    """One pass over W -> (hist, maxima, stats on BFP_BLOCK-blocks for BFP6) of normalised magnitude u."""
     if block == BLOCK:
-        return _stats(W, H, block) + (_stats(W, H, 16),)
+        return _stats(W, H, block) + (_stats(W, H, BFP_BLOCK),)
     return _stats(W, H, block)
 
 
@@ -71,7 +72,7 @@ def g(name, u, flag, shift=0):
     """Expected squared error (in units of 2^e_b) at normalised magnitude u."""
     kind, p, emax = FORMATS[name]
     if kind == "bfp":
-        s = 2.0 ** (-4 + shift) * np.ones_like(u)           # D1 floor rule: step 2^(E-4)
+        s = 2.0 ** (-4 + shift) * np.ones_like(u)           # A6 floor rule: step 2^(E-4)
         step, vmax = s, p["kmax"] * s
         v = u
     else:
@@ -104,7 +105,7 @@ def predict(stats, names=None, shift=0, exact_max=True):
     um, wm, fm = maxima.T
     out = {}
     for n in names:
-        if FORMATS[n][0] == "bfp" and len(stats) > 2:          # BFP6 lives on 16-blocks
+        if FORMATS[n][0] == "bfp" and len(stats) > 2:          # BFP6 lives on BFP_BLOCK-blocks
             out[n] = predict(stats[2], [n], shift, exact_max)[n]
             continue
         tot = sum((hist[f] * g(n, u, f, shift)).sum() for f in (0, 1))

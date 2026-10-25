@@ -45,8 +45,8 @@ u = np.geomspace(2**-8, 2, 4000)
 for n in names:
     e = P.g(n, u, np.zeros_like(u))               # model: step^2/12, clipping, flush-to-zero
     rel = np.sqrt(e) / u * 100
-    # BFP6 16|4|5 and MXINT6 have the same element grid relative to the block binade
-    # (step 2^-4, max 31/16); they differ only through block size (16 vs 32).
+    # BFP6 32|4|5 and MXINT6 have the same element grid relative to the block binade
+    # (step 2^-4, max 31/16); they differ only in the exponent range and the code -32.
     lab = "MXINT6 / BFP6 (same grid)" if n == "BFP6" else short[n]
     if n == "MXINT6":                              # identical curve to BFP6
         continue
