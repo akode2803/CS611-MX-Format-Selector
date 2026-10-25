@@ -1,5 +1,5 @@
 $ python validate_predictor.py
-# exit 0, 6.1 s
+# exit 0, 1.4 s
 
 W_C: output SQNR (dB)   exhaustive   predicted   diff
   MXFP6_E2M3        30.23       30.18   -0.05
@@ -8,7 +8,7 @@ W_C: output SQNR (dB)   exhaustive   predicted   diff
   MXFP6_E3M2        25.29       25.24   -0.05
   MXFP6_E4M1        19.10       18.88   -0.22
   winner exhaustive=MXFP6_E2M3 predicted=MXFP6_E2M3  spearman=1.00
-  time: exhaustive 67.8 ms | predictor stats pass 4.7 ms + scoring 5 formats 0.41 ms
+  time: exhaustive 4.4 ms | predictor stats pass 3.2 ms + scoring 5 formats 0.20 ms
   ops: exhaustive ~ 5 formats x (10000 roundings + 2560000 MACs for Q(W)X)
        predictor  ~ 1 x 10000 binnings + 5 formats x (1028 bin evaluations + 400 block-max roundings)
 
