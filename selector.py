@@ -1,5 +1,5 @@
 """Format selectors for CS611 A1, Group 8: predict every candidate's error, pick the smallest.
-Owner: Aryan.  Uses formats.py v2.1 (five candidates, MXINT6 two's complement, BFP6 16|4|5).
+Owner: Aryan.  Uses formats.py v2.2 (five candidates, MXINT6 two's complement, BFP6 16|4|5).
 
 Every approach has the same interface
     approach(W, h=None, **kw) -> {format name: predicted squared error}

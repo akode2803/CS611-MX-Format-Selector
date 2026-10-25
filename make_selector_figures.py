@@ -162,7 +162,8 @@ def fig7():
     P = np.array(pts)[1:]                       # drop the 128x128 warm-up row (kernel tables are built there)
     fig, ax = plt.subplots(figsize=(6, 4), facecolor=SURF)
     style(ax)
-    ser = (("brute force (quantize all 5)", 1, "#2a78d6"), ("exact sketch", 2, "#eb6834"), ("certified, importance-sampled", 3, "#1baf7a"))
+    ser = (("brute force, quantize all 5 (reference)", 1, "#2a78d6"), ("exact sketch (OUR METHOD)", 2, "#eb6834"),
+           ("certified, importance-sampled (optional extension)", 3, "#1baf7a"))
     for lab, i, c in ser:
         ax.plot(P[:, 0], P[:, i], color=c, lw=2, marker="o", markersize=6, markeredgecolor=SURF, markeredgewidth=2, label=lab)
     for x, y, f in zip(P[:, 0], P[:, 3], P[:, 4]):

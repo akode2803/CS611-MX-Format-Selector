@@ -37,6 +37,7 @@ Outputs: `results/tables/T1..T8.md/.csv`, `results/baseline_C*.csv/.json`, `figu
     python3 block_study.py --npz ...      # block length at equal storage -> results/block_study.md
     python3 scale_study.py --npz ...      # shared-exponent policies (Anuj) -> results/scale_study.md
     python3 make_selector_figures.py      # fig6, fig7
+    python3 report/build_report.py        # the report -> report/report.docx (needs python-docx)
 
 ## Tests and verification
     python3 test_formats.py               # quantizers, 31 tests
@@ -56,7 +57,7 @@ agree bit for bit on every candidate, variant and policy (`verification/CLEAN_RU
 - `run_all.py`, `run_baseline.py`, `explore.py`, `make_figures.py`, `make_selector_figures.py`
 - `verification/`: Siddhant's reference implementation, cross-check harness and reports
 - `docs/`: decisions (`DECISIONS.md`), conventions (`QUANTIZERS.md`), selector (`SELECTOR.md`), Q3 (`Q3_REPORT.md`), team channel
-- `report/`: report draft and its builder
+- `report/`: the report (`report.docx`) and its builder `build_report.py`, which reads every number from `results/`
 - `data.py`: data loading; `scipy_free_stats.py`: rank-correlation helper
 
 Format conventions follow the class (Lecture 19 notebook, board notes) and the team
