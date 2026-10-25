@@ -1,18 +1,18 @@
-# commit f4aafa9, fresh venv: pip install numpy matplotlib tqdm (numpy 2.5.4, matplotlib 3.11.2, Python 3.13.16)
+# commit 3ad35b3, fresh venv: pip install -r requirements.txt (numpy 2.5.4, Python 3.13.16, Linux)
 $ python run_all.py --fresh
 run_all:   0%|          | 0/6 [00:00<?, ?it/s]
 [tests]
-30/30 passed
+31/31 passed
   -> results/logs/test_formats.txt
-run_all:  17%|█▋        | 1/6 [00:00<00:03,  1.49it/s]
+run_all:  17%|█▋        | 1/6 [00:00<00:03,  1.53it/s]
 [baseline]
   -> results/baseline_C.json
   -> results/logs/run_baseline.txt
-run_all:  33%|███▎      | 2/6 [00:01<00:02,  1.86it/s]
+run_all:  33%|███▎      | 2/6 [00:01<00:02,  1.97it/s]
 [baseline_wx]
   -> results/baseline_C_wx.json
   -> results/logs/run_baseline_wx.txt
-run_all:  50%|█████     | 3/6 [00:01<00:01,  2.20it/s]
+run_all:  50%|█████     | 3/6 [00:01<00:01,  2.27it/s]
 [tables]
   (datasets A-E skipped: pass --npz path/to/assignment_data.npz or put it in data/)
   -> results/tables/T1_main_C.md
@@ -25,18 +25,24 @@ $ python run_all.py --fresh
 
 [scripts]
 
-team scripts:   0%|          | 0/4 [00:00<?, ?it/s][A
-team scripts:  25%|██▌       | 1/4 [00:01<00:03,  1.21s/it][A
-team scripts:  50%|█████     | 2/4 [00:01<00:01,  1.36it/s][A
-team scripts:  75%|███████▌  | 3/4 [00:03<00:01,  1.21s/it][A
-team scripts: 100%|██████████| 4/4 [00:20<00:00,  7.55s/it][A
+team scripts:   0%|          | 0/5 [00:00<?, ?it/s][A
+team scripts:  20%|██        | 1/5 [00:01<00:05,  1.26s/it][A
+team scripts:  40%|████      | 2/5 [00:01<00:02,  1.35it/s][A
+team scripts:  60%|██████    | 3/5 [00:03<00:02,  1.21s/it][A
+team scripts:  80%|████████  | 4/5 [00:19<00:07,  7.11s/it][A
+team scripts: 100%|██████████| 5/5 [00:33<00:00,  9.43s/it][A
                                                            [A  -> results/logs/validate_predictor.txt
   -> results/logs/explore.txt
   -> results/logs/make_figures.txt
   -> results/logs/scale_study.txt
-run_all:  83%|████████▎ | 5/6 [00:22<00:06,  6.05s/it]
+  -> results/logs/q3_study.txt
+run_all:  83%|████████▎ | 5/6 [00:34<00:09,  9.57s/it]
 [manifest]
   -> results/RUN_MANIFEST.md
-run_all: 100%|██████████| 6/6 [00:22<00:00,  3.70s/it]
+run_all: 100%|██████████| 6/6 [00:34<00:00,  5.76s/it]
 
-Done in 22.2 s. Tables: results/tables/, figures: figures/, logs: results/logs/, manifest: results/RUN_MANIFEST.md
+Done in 34.6 s. Tables: results/tables/, figures: figures/, logs: results/logs/, manifest: results/RUN_MANIFEST.md
+
+real	0m34.760s
+user	0m50.406s
+sys	0m0.525s
