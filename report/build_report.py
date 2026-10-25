@@ -39,6 +39,7 @@ LONG = {"MXFP6_E3M2": "MXFP6 E3M2", "MXFP6_E2M3": "MXFP6 E2M3", "MXFP6_E4M1": "M
         "BFP6": "BFP6"}
 MEMBERS = [("Aryan Kumar", "261110012"), ("Akash Kumar", "261110008"), ("Nikita Kumari Pandit", "261110078"),
            ("Siddhant Singh Rathoria", "261110062"), ("Anuj Chaudhary", "210167")]
+NOTEBOOK = "Notebook_Group8_DatasetC_6bit.ipynb"
 REPO = "https://github.com/akashiitkanpur/cs611-g8"
 INK, MUTED, ACCENT, METHOD_FILL, HEAD_FILL, NOTE_FILL = "1F2328", "57606A", "B3471D", "FCE9DC", "E8EEF6", "F4F4F2"
 WC, XC, XT = "W_[C]", "X_[cal]", "X_[test]"
@@ -455,6 +456,10 @@ P("**About this submission.** This report is the file `Report_Group8_DatasetC_6b
   "on. Paths written like `results/tables/T1_main_C.csv` are paths inside the zip, and `README.md` in the zip lists "
   "every file and the commands that regenerate it. All numbers in this report are read from those result files by "
   "`report/build_report.py`; none is typed by hand.", size=10)
+check(os.path.exists(os.path.join(ROOT, NOTEBOOK)), "the notebook is in the submission root")
+P(f"**Interactive notebook.** `{NOTEBOOK}`, also at the root of the zip, is the easiest way to try the work: it "
+  "imports the project's modules and computes the main results of Q1, Q2 and Q3 live in under a minute (Run All in "
+  "Jupyter or VS Code), runs the unit tests, and can regenerate every result file. Section 8 says more.", size=10)
 P(f"The same code is also in the group's GitHub repository, {REPO} (secondary reference; private, access on request).",
   size=10, color=MUTED)
 p = d.add_paragraph(style="TOC Heading")
@@ -1418,6 +1423,11 @@ bullets([
     f"({n_tests('test_selector.py')}, including the exactness of the chosen method in both settings), "
     f"`test_scale_opt.py` ({n_tests('test_scale_opt.py')}) and `verification/test_reference_impl.py` "
     f"({n_tests('verification/test_reference_impl.py')}).",
+    f"**Interactive notebook:** `{NOTEBOOK}` at the root of the zip imports `formats.py`, `selector.py` and "
+    "`selector_suite.py` and recomputes, live, the data statistics, the candidate formats with a worked block, "
+    "Table 5 (checked against results/tables/T1_main_C.csv), the chosen method against brute force with the same "
+    "objective, and one-seed versions of the Q3 experiments; it lets the reader change the matrix or the "
+    "activation family and runs the unit tests. Setting `RUN_LONG = True` in it reruns every study below.",
     "**Reproduction:** `python run_all.py` regenerates the tables T1–T9 (results/tables/) and the figures, and "
     "records the data hashes in results/RUN_MANIFEST.md. Each study regenerates its own results file "
     "(`bench_selector.py`, `bench_scaling.py`, `x_stress.py`, `q3_study.py`, `block_study.py`, `scale_study.py`; "

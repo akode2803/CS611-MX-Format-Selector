@@ -1,6 +1,6 @@
 """Build the submission zip:  python make_submission.py  ->  dist/CS611_A1_Group8_DatasetC_6bit.zip
 
-The report and README.md sit at the root of the zip, next to the code, data, results and
+The report, the notebook and README.md sit at the root of the zip, next to the code, data, results and
 figures that produce the report's numbers.  Working notes, team documents and checkpoints are
 left out.  Run run_all.py, the studies and report/build_report.py first.
 """
@@ -11,7 +11,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPORT = "Report_Group8_DatasetC_6bit.docx"
 OUT = os.path.join(HERE, "dist", "CS611_A1_Group8_DatasetC_6bit.zip")
 
-ROOT_FILES = [REPORT, "README.md", "requirements.txt", "FORMATS_API.md",
+ROOT_FILES = [REPORT, "Notebook_Group8_DatasetC_6bit.ipynb", "README.md", "requirements.txt", "FORMATS_API.md",
               "formats.py", "selector.py", "selector_suite.py", "predictor.py", "data.py", "scipy_free_stats.py",
               "run_all.py", "run_baseline.py", "explore.py", "make_figures.py", "make_selector_figures.py",
               "validate_predictor.py", "bench_selector.py", "bench_scaling.py", "x_stress.py", "q3_study.py",
