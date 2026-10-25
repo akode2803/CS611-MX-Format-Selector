@@ -65,8 +65,8 @@ Each row has `y_rel_err_heldout` (primary, A11), `n_roundings` and `n_macs` (for
 
 ## Regenerate everything
 
-`python run_all.py` runs the tests, the exhaustive baselines (W and W+X), all tables (`results/tables/T1..T8`), the team scripts and the figures. It also writes `results/RUN_MANIFEST.md`. Datasets A–E are included if `data/assignment_data.npz` exists (or pass `--npz`).
+`python run_all.py` runs the tests, the exhaustive baselines (W and W+X), all tables (`results/tables/T1..T9`), the team scripts and the figures. It also writes `results/RUN_MANIFEST.md`. Datasets A–E are included if `data/assignment_data.npz` exists (or pass `--npz`).
 
 ## Tests
 
-`python test_formats.py` runs 30 tests: the 18 from v1 (two adapted to A6) and 12 new ones. The new tests cover the BFP6 hand example and 4-bit clamp, 32|8|5 = MXINT6_sym, BFP6 = 3.46% on C, E4M1 one-NaN (20.7%), range vs saturated, two's complement, storage per A14, W+X blocking, metrics and exhaustive in W+X, and stale checkpoints.
+`python test_formats.py` runs 31 tests: the 18 from v1 (two adapted to A6) and 12 new ones. The new tests cover the BFP6 hand example and 4-bit clamp, 32|8|5 = MXINT6_sym, BFP6_g16 = 3.46% on C and BFP6 = MXINT6_sym, E4M1 one-NaN (20.7%), range vs saturated, two's complement, storage per A14, W+X blocking, metrics and exhaustive in W+X, and stale checkpoints.

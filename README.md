@@ -11,15 +11,34 @@ for the weight matrix W_C and its calibration input X_cal.
 | Siddhant Singh Rathoria | 261110062 |
 | Anuj Chaudhary | 210167 |
 
+## Start here: the interactive notebook
+
+> **Open [`Notebook_Group8_DatasetC_6bit.ipynb`](Notebook_Group8_DatasetC_6bit.ipynb) and choose *Run All*.**
+> No command line needed. It runs in under a minute in Jupyter or VS Code (numpy and matplotlib only)
+> and walks through the whole assignment live, importing the modules in this folder:
+>
+> 1. the data, and the five candidate formats with one block quantized step by step
+> 2. **Q1**: the held-out output error of every format (the report's Table 5, recomputed and checked)
+> 3. **Q2**: the chosen selection method against brute force: the same scores, without quantizing;
+>    change the matrix or the activation family and try it yourself
+> 4. **Q3**: outliers, sparsity and variation in scale, live, plus the 10-seed figures
+> 5. the unit tests, and every long study behind one switch (`RUN_LONG = True`)
+>
+> The report (`Report_Group8_DatasetC_6bit.docx`) has the full explanations; the notebook follows its section numbers.
+>
+> From a terminal: `python -m pip install -r requirements.txt`, then `jupyter notebook Notebook_Group8_DatasetC_6bit.ipynb`.
+
 ## What is in this package
 
-**Start with the report, `Report_Group8_DatasetC_6bit.docx`, at the root of the zip.** It is
-self-contained: formats, assumptions, methods, results and their sources. Everything else is the
-code and data that produce its numbers. The report names files by their path inside this zip.
+**Read the report, `Report_Group8_DatasetC_6bit.docx`, and try the notebook, both at the root of the
+zip.** The report is self-contained: formats, assumptions, methods, results and their sources.
+Everything else is the code and data that produce its numbers. The report names files by their path
+inside this zip.
 
 | Path | What it is |
 |---|---|
 | `Report_Group8_DatasetC_6bit.docx` | the report |
+| `Notebook_Group8_DatasetC_6bit.ipynb` | **the interactive notebook** (start here to run anything) |
 | `README.md` | this file |
 | `requirements.txt` | Python packages |
 | `data/` | `W_C.npy` (100×100) and `X_cal.npy` (100×256) |
@@ -48,6 +67,9 @@ without quantizing anything and makes the same choice as brute force with the sa
 Report sections 3–7 give the details.
 
 ## How to reproduce
+
+The notebook does all of this from one place (its last section; set `RUN_LONG = True`). From the
+command line instead:
 
 Python 3.8+ with numpy and matplotlib (`tqdm` optional, `python-docx` only for rebuilding the report):
 
