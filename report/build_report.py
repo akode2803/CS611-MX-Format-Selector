@@ -1084,10 +1084,20 @@ check(abs(ey["top1"] - BM["top1"]) < 0.01, "the method is within 1 point of full
 table(["Method", "Top-1 agreement", "Mean regret dB", "95th pct. regret dB", "Max regret dB", "Median ms"], rows,
       cap=f"Random suite, {N_RANDOM} matrices, W+X (results/selector_bench_wx.md).", highlight=(0,))
 P(f"**The chosen method makes exactly the same pick as brute force with the same objective on every one of the "
-  f"{N_RANDOM} matrices**, without quantizing anything. Brute force on the full output error of the fit columns, "
-  f"which also captures correlations between channels, is right in {pct(ey['top1'])} of cases against "
-  f"{pct(BM['top1'])}: the remaining misses come from the difference between the fit and held-out columns, which "
-  "no method that sees only the fit columns can remove.")
+  f"{N_RANDOM} matrices**, without quantizing anything.")
+miss_rg = [float(r["regret_y_db"]) for r in BM["rows"] if r["hit"] == "0"]
+check(miss_rg and np.median(miss_rg) < 0.25, "the misses are mostly near ties")
+P(f"**Why {pct(BM['top1'])} and not 100%: the misses come from the held-out columns, not from the method.** Every "
+  "method, including brute force, chooses with the fit (even) columns of X, while the truth is measured on the "
+  "held-out (odd) columns, which stand in for the unseen X_[test]. When two formats are close, the better one on "
+  "the fit columns is sometimes not the better one on the held-out columns. Brute force with the same objective, "
+  f"which quantizes every candidate, misses exactly the same {len(miss_rg)} matrices, because its picks are "
+  "identical. Brute force on the full output error of the fit columns, which also captures correlations between "
+  f"channels, is right in {pct(ey['top1'])} of cases: no better than the chosen method within the noise of the "
+  "test. The misses are also mostly near ties: their median regret is "
+  f"{np.median(miss_rg):.2f} dB, about {100 * (10 ** (np.median(miss_rg) / 10) - 1):.0f}% more error power. "
+  "No method that sees only the fit columns can remove these misses; a method scored on the held-out columns "
+  "themselves would reach 100% by definition.")
 by = [[XNAME.get(k, k)] + [f"{pct(bench('random', a, k)['top1'], 0)} / {f3(bench('random', a, k)['regret'])}"
                            for a in (M, "exhaustive_y", "exhaustive_w")] for k in XKINDS]
 table(["Activation family", "Chosen method", "Brute force, full output", "Brute force, unweighted"], by,
