@@ -1237,7 +1237,7 @@ bullets([
     "It scores the class scale rule, the rule of our headline tables; the `opt` policy needs `sketch_opt_h`.",
     f"BFP6's exponent clamp is modelled exactly for values below 2^[{7 + 1 - S.DMIN}], that is up to {-S.DMIN} "
     "octaves above the top of its exponent range; larger values would need more offset bins.",
-    "Our test matrices and activation families are synthetic, as are the course datasets.",
+    "Our test matrices and activation families are our own synthetic constructions. The course also describes its five weight matrices as synthetic (README of the assignment data), without saying how they were generated; section 1.2 describes W_[C] by its measured statistics instead.",
 ])
 
 # =========================================================================== 7. Q3
