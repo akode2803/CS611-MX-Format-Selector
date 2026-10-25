@@ -169,7 +169,7 @@ def test_bfp6_16_4_5():
     assert Wh[0, 16] == 0.0 and Wh[0, 17] == 2.0 ** -12             # below step/2 -> 0; exactly one step -> kept
     assert Wh[0, 32] == 248.0 and st["sat"] >= 1
     assert Wh[0, 97] == -5.0
-    # BFP 32|8|5 with the floor rule is numerically MXINT6 (D1 sentence in the report)
+    # BFP 32|8|5 with the floor rule is numerically MXINT6 (A6 sentence in the report)
     Wr = np.random.default_rng(3).laplace(size=(10, 100))
     assert np.array_equal(R.quantize_matrix(Wr, "BFP6_32_8_floor")[0], R.quantize_matrix(Wr, "MXINT6")[0])
 

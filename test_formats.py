@@ -4,7 +4,7 @@ The FP checks compare against a grid built independently from the bit codes
 (exponent field x mantissa field), not against fp_round's own arithmetic.
 Hand examples (BFP6, saturation counts, W+X) are worked out in the comments.
 
-v2 (22 Oct): two v1 tests changed because D1 changed what "BFP6" means
+v2 (22 Oct): two v1 tests changed because A6 changed what "BFP6" means
 (test_bfp6_variants_vs_mxint6, test_exponent_field_clamped); every other v1 test
 is unchanged. New tests are marked "v2".
 """
@@ -22,7 +22,7 @@ from formats import (FORMATS, VARIANTS, E8M0_MIN, E8M0_MAX, spec, layout, fp_rou
 
 FP_NAMES = ["MXFP6_E3M2", "MXFP6_E2M3", "MXFP6_E4M1", "MXFP6_E4M1_v192", "MXFP6_E4M1_nan1"]
 ALL = list(FORMATS) + list(VARIANTS)
-SYMMETRIC = [n for n in ALL if n != "MXINT6"]             # two's complement is asymmetric (D10)
+SYMMETRIC = [n for n in ALL if n != "MXINT6"]             # two's complement is asymmetric (A5)
 rng = np.random.default_rng(0)
 
 
@@ -206,7 +206,7 @@ def test_ceil_never_saturates_and_opt_never_worse():
 
 
 def test_bfp6_variants_vs_mxint6():
-    # v2 (D1): BFP6 is now 16|4|5 and is NOT MXINT6. The old block-32 "ceil" BFP6 is kept
+    # v2 (A6): BFP6 is now 16|4|5 and is NOT MXINT6. The old block-32 "ceil" BFP6 is kept
     # as BFP6_b32_ceil and is still identical to symmetric MXINT6 under ceil (documented equivalence).
     W = rng.standard_normal((40, 100))
     assert np.array_equal(quantize(W, "BFP6_b32_ceil")[0], quantize(W, "MXINT6_sym", policy="ceil")[0])
@@ -240,7 +240,7 @@ def test_exhaustive_and_checkpoint(tmp=None):
     assert len(ranking(rows)) == 5
 
 
-# ---------------------------------------------------------------- v2: BFP6 = 16|4|5 (D1)
+# ---------------------------------------------------------------- v2: BFP6 = 16|4|5 (A6)
 def test_v2_bfp6_layout_and_hand_example():
     lay = layout("BFP6")
     assert lay["block"] == 16 and lay["scale_bits"] == 4 and lay["field"] == (-8, 7) and lay["policy"] == "ocp"
@@ -282,7 +282,7 @@ def test_v2_bfp6_4bit_exponent_clamp():
 
 
 def test_v2_bfp_32_8_5_identical_to_mxint6_sym():
-    # D1: BFP(32 values, 8-bit exponent, floor, RNE) == symmetric MXINT6, including the stored exponent
+    # A6: BFP(32 values, 8-bit exponent, floor, RNE) == symmetric MXINT6, including the stored exponent
     W = rng.standard_t(4, (30, 100))
     W[0, :32] = 2.0 ** -200
     W[1, 32:64] = 2.0 ** 200
@@ -296,11 +296,11 @@ def test_v2_bfp6_on_dataset_C():
     W, X = load_C()
     if W is None:
         return
-    assert abs(yerr(W, X, "BFP6") - 3.46) < 0.006                # plan D1 prototype value
+    assert abs(yerr(W, X, "BFP6") - 3.46) < 0.006                # plan A6 prototype value
     assert abs(yerr(W, X, "BFP6_g32e8") - yerr(W, X, "MXINT6_sym")) == 0
 
 
-# ---------------------------------------------------------------- v2: E4M1 one-NaN (D3)
+# ---------------------------------------------------------------- v2: E4M1 one-NaN (A4)
 def test_v2_e4m1_one_nan_variant():
     kind, p, emax = spec("MXFP6_E4M1_nan1")
     assert p["maxval"] == 256.0 and emax == 8 and p["bias"] == 7
@@ -309,9 +309,9 @@ def test_v2_e4m1_one_nan_variant():
     W, X = load_C()
     if W is None:
         return
-    assert abs(yerr(W, X, "MXFP6_E4M1_nan1") - 20.7) < 0.06       # plan D3 (class rule)
+    assert abs(yerr(W, X, "MXFP6_E4M1_nan1") - 20.7) < 0.06       # plan A4 (class rule)
     c = [yerr(W, X, n, policy="ceil") for n in ("MXFP6_E4M1", "MXFP6_E4M1_nan1", "MXFP6_E4M1_v192")]
-    # with ceil all three agree (plan D3). Not bit-identical: the scaled grids differ only at
+    # with ceil all three agree (plan A4). Not bit-identical: the scaled grids differ only at
     # the subnormal end, which moves the error by ~1e-6 percentage points.
     assert max(c) - min(c) < 1e-5 and abs(c[0] - 10.18) < 0.006
 
@@ -327,7 +327,7 @@ def test_v2_range_vs_saturated_counts():
     assert st["n_range"] == 1 and st["n_saturated"] == 1
 
 
-# ---------------------------------------------------------------- v2: MXINT6 two's complement (D10)
+# ---------------------------------------------------------------- v2: MXINT6 two's complement (A5)
 def test_v2_mxint6_twos_complement():
     # block [-1.99]: E = 0, -1.99 * 16 = -31.84 -> -32 is a code in two's complement (-2.0),
     # symmetric MXINT6 clips to -31 (-1.9375)
@@ -336,7 +336,7 @@ def test_v2_mxint6_twos_complement():
     assert quantize(row(1.99), "MXINT6")[0][0, 0] == 1.9375       # +32 is not a code
 
 
-# ---------------------------------------------------------------- v2: storage (D11)
+# ---------------------------------------------------------------- v2: storage (A14)
 def test_ceil_two_complement_negative_max_fits_minus_32():
     # literal "smallest scale that clips nothing" (24 Oct): block max -1.99 * 2^0 fits code -32
     # at e = 0, so ceil keeps e = 0; +1.99 does not fit +31/16 and moves up to e = 1
@@ -362,7 +362,7 @@ def test_v2_true_storage_per_format():
     assert format_storage("BFP6", 1, 100)[0] == 628
 
 
-# ---------------------------------------------------------------- v2: W+X mode (D2)
+# ---------------------------------------------------------------- v2: W+X mode (A8)
 def test_v2_quantize_X_blocks_run_down_columns():
     X = rng.standard_normal((100, 7))
     Xq, e = quantize_X(X, "MXFP6_E2M3")
@@ -422,7 +422,7 @@ def test_dataset_C_matches_prototype():
         return
     proto = {  # % Y error from the team plan (ocp, ceil, block-optimal)
         "MXFP6_E2M3": (3.08, 3.10, 3.06), "MXINT6_sym": (4.05, 4.17, 3.90),
-        "MXINT6": (4.05, 4.15, 3.85),                  # two's complement (D10); ceil: literal reading
+        "MXINT6": (4.05, 4.15, 3.85),                  # two's complement (A5); ceil: literal reading
         "MXFP6_E3M2": (5.44, 5.24, 5.24), "MXFP6_E4M1": (11.09, 10.18, 10.18),
     }
     for n, vals in proto.items():

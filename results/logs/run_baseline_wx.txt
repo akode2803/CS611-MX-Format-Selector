@@ -1,5 +1,5 @@
 $ python run_baseline.py --mode wx --fresh
-# exit 0, 0.4 s
+# exit 0, 0.6 s
 
 W (100, 100)  X (100, 256)  formats 5  dataset C  mode wx
 
@@ -38,5 +38,6 @@ Saved /Users/aryan/Documents/GitHub/CS611 Assignment/cs611-g8/results/baseline_C
 [stderr]
 
 exhaustive[wx]:   0%|          | 0/20 [00:00<?, ?it/s]
-exhaustive[wx]:  60%|██████    | 12/20 [00:00<00:00, 106.53it/s]
-exhaustive[wx]: 100%|██████████| 20/20 [00:00<00:00, 114.47it/s]
+exhaustive[wx]:  35%|███▌      | 7/20 [00:00<00:00, 58.25it/s]
+exhaustive[wx]:  65%|██████▌   | 13/20 [00:00<00:00, 41.62it/s]
+exhaustive[wx]: 100%|██████████| 20/20 [00:00<00:00, 57.65it/s]

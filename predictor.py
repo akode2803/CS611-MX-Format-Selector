@@ -19,7 +19,7 @@ and the predicted output error of format f is
 Building the histogram is one pass over W (shared by all formats); scoring a
 format costs O(#bins), independent of the matrix size.
 
-BFP6 (D1: 16|4|5, floor rule) is the integer grid k * 2^(E-4) on blocks of 16, so
+BFP6 (A6: 16|4|5, floor rule) is the integer grid k * 2^(E-4) on blocks of 16, so
 build_stats() also keeps the same statistics for 16-value blocks and BFP6 is scored
 on those (fixed 24 Oct: v1 scored the old block-32 "ceil" BFP6). Not modelled: the
 4-bit exponent clamp of BFP6 and the extra -32 code of two's-complement MXINT6.
@@ -71,7 +71,7 @@ def g(name, u, flag, shift=0):
     """Expected squared error (in units of 2^e_b) at normalised magnitude u."""
     kind, p, emax = FORMATS[name]
     if kind == "bfp":
-        s = 2.0 ** (-4 + shift) * np.ones_like(u)           # D1 floor rule: step 2^(E-4)
+        s = 2.0 ** (-4 + shift) * np.ones_like(u)           # A6 floor rule: step 2^(E-4)
         step, vmax = s, p["kmax"] * s
         v = u
     else:

@@ -1,6 +1,6 @@
 """
 Bit-exact cross-check: reference implementation (reference_impl.py) vs any other quantizer
-(Akash's formats.py, Aryan's prototype, ...).
+(formats.py, earlier prototypes, ...).
 
 Usage
   python crosscheck.py --selftest                       # proves the harness catches a 1-ulp bug
@@ -9,7 +9,7 @@ Usage
 
 The function under test must have the signature
     fn(W: np.ndarray, fmt: str, rule: str) -> W_hat: np.ndarray (same shape, dequantized)
-with fmt in FORMAT_MAP keys and rule in {'floor','ceil'}. If Akash's API differs, write a
+with fmt in FORMAT_MAP keys and rule in {'floor','ceil'}. If an implementation's API differs, write a
 3-line adapter function and point --impl at it; do NOT modify reference_impl.py to match his code.
 """
 import argparse, importlib, json, math, sys
@@ -26,7 +26,7 @@ FORMAT_MAP = {
     "MXINT6": ["floor", "ceil", "opt"],
     "MXINT6_twos": ["floor", "ceil", "opt"],
     "BFP6_32_8_floor": ["floor", "ceil", "opt"],
-    "BFP6": ["floor", "ceil", "opt"],            # D1: 16|4|5, 4-bit exponent [-8, 7], floor, RNE
+    "BFP6": ["floor", "ceil", "opt"],            # A6: 16|4|5, 4-bit exponent [-8, 7], floor, RNE
     "BFP6_32_8_ceil": ["ceil"],   # old repo BFP6
     "BFP6_row100": ["ceil", "floor", "opt"],
 }

@@ -1,11 +1,11 @@
-"""Reference-only numbers on dataset C (Siddhant). Run: python verify_C.py [data_dir]"""
+"""Reference-only numbers on dataset C. Run: python verify_C.py [data_dir]"""
 import sys, numpy as np, reference_impl as R
 
 import os
 d = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
 W = np.load(f"{d}/W_C.npy").astype(np.float64)
 X = np.load(f"{d}/X_cal.npy").astype(np.float64)
-Xho = X[:, 1::2]                                         # held-out odd columns (D6)
+Xho = X[:, 1::2]                                         # held-out odd columns (A11)
 
 
 def run(name, rule):

@@ -1,5 +1,5 @@
 """Format selectors for CS611 A1, Group 8: predict every candidate's error, pick the smallest.
-Owner: Aryan.  Uses formats.py v2.2 (five candidates, MXINT6 two's complement, BFP6 16|4|5).
+Uses formats.py v2.2 (five candidates, MXINT6 two's complement, BFP6 16|4|5).
 
 Every approach has the same interface
     approach(W, h=None, **kw) -> {format name: predicted squared error}
@@ -9,10 +9,21 @@ the diagonal part of ||(W - Wq) X||^2 ("way 2": the activations decide how much 
 matters).  select(W, h, approach) returns the argmin.  APPROACHES lists them all, from the
 cheapest rule to brute force, so bench_selector.py can plot accuracy against cost.
 
-OUR METHOD (the one the assignment asks for): METHOD = "sketch_h", called as
-    select_format(W, X_cal) -> (format name, {format: predicted error})
-Every other entry of APPROACHES is an optional addition (ROLE says which kind): brute-force
-references it is measured against, ablations of it, extensions, and the alternatives we tried.
+THE CHOSEN METHOD: METHOD = "sketch_h", called as
+    select_format(W, X_cal, mode="wx") -> (format name, {format: predicted error})
+Every other entry of APPROACHES is a method we compared it with (ROLE says which kind):
+brute-force references, variants of the chosen method, extensions, and alternatives.
+
+W and X both quantized (mode "wx", the primary setting)
+-------------------------------------------------------
+With Wq and Xq quantized by the same format, W X - Wq Xq = (W - Wq) X + W (X - Xq) - (W - Wq)(X - Xq).
+The last part is second order, and with independent zero-mean rounding errors the cross term
+averages out, so
+    ||W X - Wq Xq||^2  ~  ||(W - Wq) X||^2  +  ||W (X - Xq)||^2.
+Each term has the form of the weights-only problem: the first weights W's entries by
+h_j = sum_k X_jk^2, the second weights the entries of X^T by g_j = sum_i W_ij^2 (X is blocked
+down its columns, i.e. along the rows of X^T).  run_wx() runs any approach on both terms and
+adds the scores; for the chosen method that is two sketches, one of W and one of X.
 
 The method: a format-independent sketch plus a per-format kernel
 ----------------------------------------------------------------
@@ -31,14 +42,14 @@ density inside the bin; nb = 1 is "one bin per octave", and dropping the octave 
 the two-statistic closed forms rho (block peaks) and phi (element binades).
 The sketch is additive, so it can be built from a random sample of blocks (an unbiased estimate
 with an error bar) or merged across shards; scoring a format costs O(#bins), whatever the size
-of W.  The weighted-histogram idea is Akash's predictor.py; this version makes it exact,
+of W.  The weighted-histogram idea comes from predictor.py; this version makes it exact,
 handles BFP's 16-blocks and exponent clamp and the two's-complement sign asymmetry.
 """
 import time
 
 import numpy as np
 
-from formats import FORMATS, spec, layout, elem_round, floor_log2, quantize
+from formats import FORMATS, spec, layout, elem_round, floor_log2, quantize, quantize_X
 
 CANDIDATES = list(FORMATS)
 DMIN, DMAX = -8, 40          # octave offsets kept; d > DMAX flushes in every candidate
@@ -206,8 +217,8 @@ def hybrid(W, h=None):
     return {n: _elem_model(W, h, n, True) for n in CANDIDATES}
 
 
-def akash_hist(W, h=None):
-    """Akash's predictor.py (BFP6 scored on 16-blocks since 24 Oct)."""
+def hist_predictor(W, h=None):
+    """predictor.py: expected error per histogram bin, block maxima exact (BFP6 on 16-blocks)."""
     from predictor import build_stats, predict
     return predict(build_stats(W, None if h is None else np.diag(h)), CANDIDATES)
 
@@ -514,9 +525,11 @@ def tree_predict(tree, x):
     return tree["leaf"]
 
 
-def learned(W, h=None, tree=None):
-    """Learned rule: the fitted tree's label gets score 0, the rest 1 (no error estimate)."""
-    lab = tree_predict(tree, features(W))
+def learned(W, h=None, tree=None, X=None):
+    """Learned rule: the fitted tree's label gets score 0, the rest 1 (no error estimate).
+    X given (W+X mode): the features of X^T are appended to those of W."""
+    x = features(W) if X is None else np.concatenate([features(W), features(np.asarray(X).T)])
+    lab = tree_predict(tree, x)
     return {n: 0.0 if n == lab else 1.0 for n in CANDIDATES}
 
 
@@ -534,7 +547,7 @@ APPROACHES = {
     "sketch_s10_h":   (sketch_select, {"frac": 0.1}, True, "sampled", "exact sketch on 10% of blocks"),
     "certified_h":    (certified, {}, True, "sampled", "uniform sample until the winner is 3 s.e. ahead"),
     "certified_is_h": (certified_is, {}, True, "sampled", "block maxima + importance sample, 3 s.e."),
-    "akash_hist_h":   (akash_hist, {}, True, "sketch", "predictor.py (expected error + exact block max)"),
+    "hist_pred_h":    (hist_predictor, {}, True, "sketch", "histogram predictor: expected error per bin + exact block max"),
     "m1":             (m1, {}, False, "1 pass", "per-element expected error"),
     "m1_h":           (m1, {}, True, "1 pass", "per-element expected error, H-weighted"),
     "hybrid_h":       (hybrid, {}, True, "1 pass", "M1 with the top octave rounded exactly"),
@@ -559,13 +572,15 @@ ROLE.update(dict.fromkeys(("sketch", "sketch_nb1_h", "sketch_nb4_h", "sketch_nb1
                            "closed_form_h"), "ablation"))
 ROLE.update(dict.fromkeys(("sketch_s10_h", "certified_h", "certified_is_h", "certified_rows_y", "sketch_opt_h"),
                           "extension"))
-ROLE.update(dict.fromkeys(("learned_tree", "akash_hist_h", "m1", "m1_h", "hybrid_h", "exh_rows10", "ant_rule",
+ROLE.update(dict.fromkeys(("learned_tree", "hist_pred_h", "m1", "m1_h", "hybrid_h", "exh_rows10", "ant_rule",
                            "fit_gauss", "fit_laplace", "fit_t"), "alternative"))
-ROLE_TEXT = {"method": "OUR METHOD",
-             "reference": "optional: brute-force reference (what the method is measured against)",
-             "ablation": "optional: ablation of the method (way 1, coarser bins, closed form)",
-             "extension": "optional: extension (sampling for large W, full H, `opt` policy)",
-             "alternative": "optional: alternative we tried (literature or our own)"}
+ROLE_TEXT = {"method": "CHOSEN METHOD",
+             "reference": "brute-force reference (what the chosen method is measured against)",
+             "ablation": "variant of the chosen method (no activation weighting, coarser bins, closed form)",
+             "extension": "extension (sampling for large matrices, full H, `opt` policy)",
+             "alternative": "alternative method (from the literature or our own)"}
+REL_SCORES = {"fit_gauss", "fit_laplace", "fit_t"}      # already relative errors
+PSEUDO = {"learned_tree", "ant_rule"}                   # 0/1 labels, not error estimates
 
 
 def run(name, W, h=None, X=None, **extra):
@@ -579,13 +594,67 @@ def run(name, W, h=None, X=None, **extra):
     return sc, time.perf_counter() - t0
 
 
+def exhaustive_full_wx(W, X):
+    """Brute force with W and X quantized: the full ||W X - Wq Xq||^2 (no split into terms)."""
+    Y = W @ X
+    return {n: float(((Y - quantize(W, n)[0] @ quantize_X(X, n)[0]) ** 2).sum()) for n in CANDIDATES}
+
+
+def _combine_last(fn, a, b):
+    if getattr(fn, "last", None) is not None and a is not None and b is not None:
+        fn.last = (a[0] + b[0], a[1] + b[1], a[2] and b[2])
+
+
+def run_wx(name, W, X, **extra):
+    """Run one approach in W+X mode (W and X quantized with the same format); returns
+    (scores, seconds).  X = calibration columns.  The score is the weight term plus the
+    activation term (module docstring): approaches that weight errors (uses_h) score W with
+    h = sum_k X_jk^2 and X^T with g = sum_i W_ij^2; approaches that do not weight errors add
+    the relative errors of W and X; 'exhaustive_y' measures the full output error directly."""
+    W = np.asarray(W, dtype=np.float64)
+    X = np.asarray(X, dtype=np.float64)
+    t0 = time.perf_counter()
+    if name == "exhaustive_y":
+        return exhaustive_full_wx(W, X), time.perf_counter() - t0
+    fn, kw, uses_h, _, _ = APPROACHES[name]
+    h, g = (X ** 2).sum(1), (W ** 2).sum(0)
+    if name in NEEDS_X:
+        a = fn(W, None, X=X, **kw)
+        la = fn.last
+        b = fn(X.T, None, X=W.T, **kw)
+        _combine_last(fn, la, fn.last)
+        sc = {n: a[n] + b[n] for n in CANDIDATES}
+    elif name == "learned_tree":
+        sc = learned(W, tree=extra["tree"], X=X)
+    elif name == "ant_rule":                      # the rule's choice for W, unless W and X agree
+        a, b = ant_rule(W), ant_rule(X.T)
+        sc = {n: a[n] + 0.5 * b[n] for n in CANDIDATES}
+    else:
+        a = fn(W, h if uses_h else None, **{**kw, **extra})
+        la = getattr(fn, "last", None)
+        b = fn(X.T, g if uses_h else None, **{**kw, **extra})
+        _combine_last(fn, la, getattr(fn, "last", None))
+        if uses_h or name in REL_SCORES:
+            sc = {n: a[n] + b[n] for n in CANDIDATES}
+        else:
+            ew, ex = (W ** 2).sum(), (X ** 2).sum()
+            sc = {n: a[n] / ew + b[n] / ex for n in CANDIDATES}
+    return sc, time.perf_counter() - t0
+
+
 def select(W, h=None, approach=METHOD):
     sc, _ = run(approach, W, h)
     return min(sc, key=sc.get), sc
 
 
-def select_format(W, X_cal):
-    """OUR METHOD.  h_j = sum over calibration columns of X_j^2 (the diagonal of X X^T), then the
-    exact sketch scores all five candidates without quantizing W; returns (best, scores)."""
+def select_format(W, X_cal, mode="wx"):
+    """THE CHOSEN METHOD.  mode "wx" (primary: W and X quantized): sketch W weighted by
+    h_j = sum_k X_jk^2 and X^T weighted by g_j = sum_i W_ij^2, add the two exact errors.
+    mode "w" (weights only, X kept in full precision): the first term only.
+    Nothing is quantized; returns (best format, {format: predicted squared output error})."""
+    W = np.asarray(W, dtype=np.float64)
     X_cal = np.asarray(X_cal, dtype=np.float64)
-    return select(np.asarray(W, dtype=np.float64), (X_cal ** 2).sum(1), METHOD)
+    if mode == "wx":
+        sc, _ = run_wx(METHOD, W, X_cal)
+        return min(sc, key=sc.get), sc
+    return select(W, (X_cal ** 2).sum(1), METHOD)

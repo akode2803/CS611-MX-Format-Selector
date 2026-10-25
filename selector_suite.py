@@ -1,15 +1,15 @@
-"""Permanent test matrices for the selectors (Aryan).  Everything is seeded and regenerated.
+"""Permanent test matrices for the selectors.  Everything is seeded and regenerated.
 
   datasets()       W_A ... W_E with the course X_cal (needs assignment_data.npz)
   adversarial()    28 hand-made families: heavy tails, sparsity, outliers (continuous
-                   magnitudes, see issue #5), wide dynamic range, few-level alphabets, pre-quantized
+                   magnitudes, so no outlier sits exactly on a grid point), wide dynamic range, few-level alphabets, pre-quantized
                    data, column spread, empty rows; X white Gaussian
   random_suite(n)  n random matrices mixing a base distribution, sparsity, random / channel /
                    block outliers, row and column gains, rescaled by a power of two to max|W| in [8, 16); each gets a random X family (XKINDS):
                    white, channel gains, outlier channels, low rank, heavy-tailed tokens, AR(1)
                    correlated channels, ReLU, massive activations (1% of channels x100), 70% sparse.
 Each generator yields (name, W, X) with X of shape (K, 256): the even columns fit H, the odd
-columns are held out (D6).
+columns are held out (A11).
 """
 import os
 

@@ -1,4 +1,4 @@
-"""Scale-optimization study (Anuj): how much does the choice of shared exponent matter?
+"""Scale-optimization study: how much does the choice of shared exponent matter?
 
   python scale_study.py                  # datasets A-E if the course file is found, else C from data/
   python scale_study.py --npz assignment_data.npz    # the course file: W_A ... W_E and X_cal
@@ -10,7 +10,7 @@ data/assignment_data.npz; without it only dataset C (data/W_C.npy) is studied.
 
 Writes results/scale_study.md (every table; generated, do not edit by hand),
 results/scale_study_<tag>.csv and figures/fig5_scale_tradeoff.png.
-Seeds are fixed; the numbers in notes/anuj.md come from these files.
+Seeds are fixed, so every run reproduces the same tables.
 """
 import argparse
 import csv
@@ -134,7 +134,7 @@ def crosscheck(datasets, md):
 
     # (mine, formats.py name, block override, exponents compared up to a constant offset).
     # Formats are matched by definition, so the check works with formats.py v1, v2 and after
-    # the revised D10 (MXINT6 two's complement, symmetric code = MXINT6_sym) lands there.
+    # the revised A5 (MXINT6 two's complement, symmetric code = MXINT6_sym) lands there.
     v2 = getattr(F, "FORMATS_VERSION", "v1") != "v1"
     repo_names = set(F.FORMATS) | set(getattr(F, "VARIANTS", {}))
     repo_tc = F.spec("MXINT6")[1].get("kmin") == -32             # formats.py MXINT6 = two's complement?
@@ -144,7 +144,7 @@ def crosscheck(datasets, md):
     if not v2:
         repo_of["BFP6_b32_ceil"], repo_of["BFP6"] = "BFP6", None    # v1 called the old BFP6 "BFP6"
     pairs = [(n, repo_of[n], None, n.startswith("BFP")) for n in CANDIDATES + EXTRA if repo_of.get(n)]
-    if repo_of.get("MXINT6_sym"):                       # D1 BFP6 = symmetric MXINT6 grid in blocks of 16
+    if repo_of.get("MXINT6_sym"):                       # A6 BFP6 = symmetric MXINT6 grid in blocks of 16
         pairs.append(("BFP6", repo_of["MXINT6_sym"], 16, False))
     checks = [("ocp", dict(policy="ocp"), dict(policy="ocp")),
               ("ceil", dict(policy="ceil"), dict(policy="ceil")),
@@ -188,18 +188,18 @@ def crosscheck(datasets, md):
     missing = [n for n in CANDIDATES + EXTRA if not repo_of.get(n)]
     md.append(f"formats.py version: {getattr(F, 'FORMATS_VERSION', 'v1')}; its MXINT6 is "
               f"{'two' + chr(39) + 's complement' if repo_tc else 'symmetric [-31, 31]'}. Formats are matched by "
-              "definition (mine `MXINT6` = two's complement, D10 of 23 Oct)"
+              "definition (mine `MXINT6` = two's complement, A5 of 23 Oct)"
               + (f"; not in this formats.py: {', '.join(missing)}" if missing else "") + ". Exponents are compared "
               "on non-zero blocks (an all-zero block gets exponent 0 in both); for the BFP rows only up to a "
               "constant offset (formats.py v1 stored the exponent of the integer code, 4 lower than mine; v2 stores "
-              "the same E). The `BFP6 | ... block=16` rows compare D1 BFP6 with the symmetric MXINT6 grid in blocks "
+              "the same E). The `BFP6 | ... block=16` rows compare A6 BFP6 with the symmetric MXINT6 grid in blocks "
               "of 16 and skip matrices where the 4-bit exponent clamp [-8, 7] could bind (every block exponent must "
               "be at least 3 from the limits). Signed zeros are not counted: an integer code has one zero, so "
               "`scale_opt.py` decodes MXINT6 to +0 where formats.py returns -0.\n")
     tc_ceil = [r for r in md if r.startswith("| MXINT6 | ") and " | ceil | " in r]
     if tc_ceil and not tc_ceil[0].endswith("| 0 |"):
         md.append("**Two's-complement MXINT6 under `ceil` differs on purpose (open decision).** formats.py's `ceil` "
-                  "(and Siddhant's reference) moves the scale up whenever amax > (31/16) 2^e, whatever the sign of "
+                  "(and the exact-fraction reference) moves the scale up whenever amax > (31/16) 2^e, whatever the sign of "
                   "the maximum. For two's complement a negative maximum down to -2 * 2^e is representable (code -32), "
                   "so nothing clips and `scale_opt.py` keeps the lower scale, which is the literal 'smallest scale "
                   "that clips nothing'. The class-rule and `opt` rows agree. This row is left out of the 'differing "
@@ -239,7 +239,7 @@ REF_NAME = {"MXFP6_E3M2": "MXFP_E3M2", "MXFP6_E2M3": "MXFP_E2M3", "MXFP6_E4M1": 
 
 
 def reference_check(W, md):
-    """Third implementation: Siddhant's scalar reference (verification/reference_impl.py), on W_C."""
+    """Third implementation: the exact-fraction scalar reference (verification/reference_impl.py), on W_C."""
     path = os.path.join(HERE, "verification", "reference_impl.py")
     if W is None or not os.path.exists(path):
         return
@@ -248,7 +248,7 @@ def reference_check(W, md):
     R = importlib.util.module_from_spec(spec_)
     spec_.loader.exec_module(R)
     rule = {"ocp": "floor", "ceil": "ceil", "opt": "opt"}
-    md.append("Third implementation, Siddhant's scalar reference (`verification/reference_impl.py`, exact "
+    md.append("Third implementation, the exact-fraction scalar reference (`verification/reference_impl.py`, exact "
               "fractions, written without reading formats.py), on W_C. Differing elements per policy, and signed "
               "zeros (-0 vs +0) in brackets:\n")
     md.append("| mine | reference | ocp | ceil | opt |")
@@ -374,7 +374,7 @@ def study(tag, W, X, md, csv_rows):
         for n in ("MXINT6", "MXINT6_sym"):
             d = res[n, "opt"]["e"] - res[n, "ocp"]["e"]
             sign[n] = (int((d == -1).sum()), int(((d == -1) & (mx < 0)).sum()))
-        md.append("MXINT6 two's complement (the candidate since D10 was revised on 23 Oct) vs MXINT6_sym [-31, 31]: "
+        md.append("MXINT6 two's complement (the candidate since A5 was revised on 23 Oct) vs MXINT6_sym [-31, 31]: "
                   "under the class rule the extra code -32 is almost never reached (held-out "
                   f"{100 * res['MXINT6', 'ocp']['y_ho']:.3f} vs {100 * res['MXINT6_sym', 'ocp']['y_ho']:.3f}). "
                   f"Under `opt` it matters ({100 * res['MXINT6', 'opt']['y_ho']:.3f} vs "
@@ -387,7 +387,7 @@ def study(tag, W, X, md, csv_rows):
     yev = col_energy(W, W, X_eval)[1]
     md.append(f"### 2b. Does the ranking change with the scale policy? (dataset {tag})\n")
     md.append("Gap = runner-up minus winner, held-out Y error in % points, with a paired bootstrap 95% interval "
-              "over the held-out columns (2000 resamples, seed 0). Tie rule (D6): if the interval contains 0 the "
+              "over the held-out columns (2000 resamples, seed 0). Tie rule (A11): if the interval contains 0 the "
               "top two are a tie; 'identical' = both formats produce exactly the same quantized W.\n")
     md.append("| policy | ranking (best first) | gap winner vs runner-up [95% CI] | verdict |")
     md.append("|---|---|---|---|")
@@ -641,7 +641,7 @@ def main():
             for p in pols:
                 md.append(f"| {SHORT[n]} | {p} | " + " | ".join(
                     f"{100 * allres[t][n, p]['y_ho']:.3f}" for t in datasets) + " |")
-        md.append("\nWinner per dataset and policy (ties by the D6 rule, see each dataset's section 2b):\n")
+        md.append("\nWinner per dataset and policy (ties by the A11 rule, see each dataset's section 2b):\n")
         md.append("| policy | " + " | ".join(datasets) + " |")
         md.append("|---|" + "---|" * len(datasets))
         for p in pols:

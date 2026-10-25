@@ -1,9 +1,9 @@
-"""Exhaustive baseline: the ground truth the selector is graded against.  Owner: Akash.
+"""Exhaustive baseline: the ground truth the selector is graded against.
 
     python run_baseline.py                          # dataset C from data/
     python run_baseline.py --W path/W_A.npy --tag A # any other matrix
     python run_baseline.py --variants               # also the sensitivity variants (E4M1 192/256, BFP 32|8|5, ...)
-    python run_baseline.py --mode wx                # W+X: X quantized too (secondary experiment, D2)
+    python run_baseline.py --mode wx                # W+X: X quantized too (the primary setting, A8)
 
 Writes results/baseline_<tag>.csv and .json, plus a resumable checkpoint
 results/baseline_<tag>.ckpt.jsonl (delete it to force a fresh run).
@@ -25,7 +25,7 @@ ap.add_argument("--X", default=os.path.join(HERE, "data", "X_cal.npy"))
 ap.add_argument("--tag", default="C")
 ap.add_argument("--out", default=os.path.join(HERE, "results"))
 ap.add_argument("--variants", action="store_true")
-ap.add_argument("--mode", default="w", choices=["w", "wx"], help="w = weights only (primary), wx = W and X")
+ap.add_argument("--mode", default="w", choices=["w", "wx"], help="w = weights only (secondary setting), wx = W and X (primary setting)")
 ap.add_argument("--fresh", action="store_true", help="ignore an existing checkpoint")
 args = ap.parse_args()
 

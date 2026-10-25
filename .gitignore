@@ -8,3 +8,4 @@ results/*.ckpt.jsonl
 results/run_all_state.json
 # course data for datasets A-E: each member uses their own copy (python run_all.py --npz ...)
 data/assignment_data.npz
+dist/

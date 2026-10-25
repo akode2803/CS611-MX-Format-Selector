@@ -1,4 +1,4 @@
 $ python q3_study.py
-# exit 0, 17.0 s
+# exit 0, 20.6 s
 
-wrote results/q3_study.md and figures/fig8-fig10
+wrote results/q3_study_wx.md and figures/fig8-fig10

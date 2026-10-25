@@ -68,7 +68,7 @@ formats.py version: v2.2; its MXINT6 is two's complement. Formats are matched by
 
 Counters on `W_C` (n_range = out of range before rounding, n_saturated = rounded value beyond vmax, n_zeroed), compared with formats.py v2's stats for every pair above under ocp, ceil and opt: 30/30 identical.
 
-Third implementation, Siddhant's scalar reference (`verification/reference_impl.py`, exact fractions, written without reading formats.py), on W_C. Differing elements per policy, and signed zeros (-0 vs +0) in brackets:
+Third implementation, the exact-fraction scalar reference (`verification/reference_impl.py`, exact fractions, written without reading formats.py), on W_C. Differing elements per policy, and signed zeros (-0 vs +0) in brackets:
 
 | mine | reference | ocp | ceil | opt |
 |---|---|---|---|---|

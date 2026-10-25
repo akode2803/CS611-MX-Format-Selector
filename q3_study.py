@@ -1,15 +1,16 @@
 """Q3: how outliers, sparsity and scale variation change the selection (dataset C, 6-bit).
-Rework of Nikita's study (review: docs/REVIEW_Q3_REPORT.md; outlier artifact: issue #5).
 
-    python q3_study.py            # about 2 min; results/q3_study.md, figures/fig8..fig10
+    python q3_study.py [--mode wx|w]   # about 2 min; results/q3_study_<mode>.md, figures/fig8..fig10
 
-Conventions: formats.py v2.2 (five candidates, BFP6 16|4|5, MXINT6 two's complement),
-weights only, X FP32.  Metric (D6): relative Frobenius error of Y = W X on the held-out odd
+Conventions: formats.py v2.2 (five candidates, BFP6 16|4|5, MXINT6 two's complement).
+--mode wx (default, primary): W and X both quantized with the candidate; --mode w: weights
+only, X in full precision.  Metric (A11): relative Frobenius error of Y = W X on the held-out odd
 columns of X_cal; both the class rule `ocp` and `opt`.  Every point is the mean of 10 seeds;
 margins are given as mean +- sd of (runner-up - winner) in percentage points.  Each experiment
-also records how often the selector (selector.sketch_select, H from the even columns) picks the
+also records how often the chosen method (selector.select_format, fitted on the even columns) picks the
 held-out winner, and mechanism counts from quantize(..., return_stats=True).
 """
+import argparse
 import os
 
 import numpy as np
@@ -18,7 +19,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt   # noqa: E402
 
 import selector as S              # noqa: E402
-from formats import FORMATS, FORMATS_VERSION, quantize, split_X   # noqa: E402
+from formats import FORMATS, FORMATS_VERSION, quantize, quantize_X, split_X   # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NAMES = list(FORMATS)
@@ -32,6 +33,21 @@ X = np.load(os.path.join(HERE, "data", "X_cal.npy")).astype(np.float64)
 XF, XE = split_X(X)
 H = (XF ** 2).sum(1)
 SIG = W0.std()
+MODE = "wx"
+_XQ = {}
+
+
+def xq(n, pol):
+    """The held-out columns as the model sees them: quantized in W+X mode, exact in W-only mode."""
+    if MODE == "w":
+        return XE
+    if (n, pol) not in _XQ:
+        _XQ[n, pol] = quantize_X(XE, n, policy=pol)[0]
+    return _XQ[n, pol]
+
+
+def figname(base):
+    return base if MODE == "wx" else base.replace(".png", "_w.png")
 
 
 def evaluate(W, cols=None, rows=None):
@@ -41,17 +57,16 @@ def evaluate(W, cols=None, rows=None):
     for pol in ("ocp", "opt"):
         for n in NAMES:
             Wq, _, st = quantize(W, n, policy=pol, return_stats=True)
-            D = W - Wq
-            e = 100 * np.linalg.norm(D @ XE) / np.linalg.norm(W @ XE)
+            XQ = xq(n, pol)
+            e = 100 * np.linalg.norm(W @ XE - Wq @ XQ) / np.linalg.norm(W @ XE)
             sub = None
             if cols is not None:
-                sub = 100 * np.linalg.norm(D[:, cols] @ XE[cols]) / np.linalg.norm(W[:, cols] @ XE[cols])
+                sub = 100 * np.linalg.norm(W[:, cols] @ XE[cols] - Wq[:, cols] @ XQ[cols]) / np.linalg.norm(W[:, cols] @ XE[cols])
             if rows is not None:
-                sub = 100 * np.linalg.norm(D[rows] @ XE) / np.linalg.norm(W[rows] @ XE)
+                sub = 100 * np.linalg.norm(W[rows] @ XE - Wq[rows] @ XQ) / np.linalg.norm(W[rows] @ XE)
             nbfp = st.get("n_scale_clamped", 0)
             out[n, pol] = (e, sub, st["n_zeroed"], st["n_range"], nbfp)
-    sel = S.sketch_select(W, H)
-    out["pick"] = min(sel, key=sel.get)
+    out["pick"] = S.select_format(W, XF, mode=MODE)[0]
     return out
 
 
@@ -91,7 +106,7 @@ def style(ax):
 def outliers(md):
     md += ["## 1. Outliers", "",
            "n weights of W_C replaced by ±k·σ (σ = std of W_C). Magnitudes are **continuous** (k·σ·U(0.7, 1.3)); "
-           "the last block repeats Nikita's exact-magnitude protocol to show the grid artifact (issue #5). "
+           "the last block uses exact magnitudes k·σ instead, to show a grid artifact. "
            "Columns E3M2…BFP6 are held-out Y error % under the class rule.", "",
            "| n, k, magnitudes | blocks with an outlier | " + HEAD[2:], "|" + "---|" * (len(NAMES) + 6)]
     fig_pts = []
@@ -137,7 +152,7 @@ def outliers(md):
     ax.set_title("Outliers (continuous magnitudes): E3M2 never wins; BFP6 does at 100σ", fontsize=10, color=INK, loc="left")
     ax.legend(frameon=False, fontsize=7, labelcolor=INK)
     fig.tight_layout()
-    fig.savefig(os.path.join(HERE, "figures", "fig8_q3_outliers.png"), dpi=160, facecolor=SURF)
+    fig.savefig(os.path.join(HERE, "figures", figname("fig8_q3_outliers.png")), dpi=160, facecolor=SURF)
 
 
 # --------------------------------------------------------------------------- sparsity
@@ -184,7 +199,7 @@ def sparsity(md):
     ax.set_title("Sparsity: the integer grids overtake E2M3", fontsize=10, color=INK, loc="left")
     ax.legend(frameon=False, fontsize=8, labelcolor=INK)
     fig.tight_layout()
-    fig.savefig(os.path.join(HERE, "figures", "fig9_q3_sparsity.png"), dpi=160, facecolor=SURF)
+    fig.savefig(os.path.join(HERE, "figures", figname("fig9_q3_sparsity.png")), dpi=160, facecolor=SURF)
 
 
 # --------------------------------------------------------------------------- scale variation
@@ -227,25 +242,32 @@ def scale(md):
         ax.set_title(title, fontsize=10, color=INK, loc="left")
     axs[0].legend(frameon=False, fontsize=8, labelcolor=INK)
     fig.tight_layout()
-    fig.savefig(os.path.join(HERE, "figures", "fig10_q3_scale.png"), dpi=160, facecolor=SURF)
+    fig.savefig(os.path.join(HERE, "figures", figname("fig10_q3_scale.png")), dpi=160, facecolor=SURF)
 
 
 def main():
+    global MODE
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--mode", default="wx", choices=["wx", "w"])
+    MODE = ap.parse_args().mode
     base = evaluate(W0)
     md = ["<!-- generated by q3_study.py; do not edit by hand -->",
           "# Q3 study: outliers, sparsity, variation in scale (dataset C, 6-bit)", "",
-          f"formats.py {FORMATS_VERSION}, weights only, held-out Y error (odd X_cal columns), mean of "
+          f"formats.py {FORMATS_VERSION}, "
+          + ("W and X both quantized" if MODE == "wx" else "weights only quantized, X in full precision")
+          + f", held-out Y error (odd X_cal columns), mean of "
           f"{SEEDS} seeds. Margin = runner-up − winner in percentage points, mean ± sd over seeds; "
-          "'(s/10)' = seeds in which that format won. Last column: how often our selection method "
-          "(exact sketch, H-weighted, H from the even columns) picks the held-out class-rule winner.", "",
+          "'(s/10)' = seeds in which that format won. Last column: how often the chosen selection method "
+          "(exact sketch, activation-weighted, fitted on the even columns) picks the held-out class-rule winner.", "",
           "Unmodified W_C, class rule: " + ", ".join(f"{SHORT[n]} {base[n, 'ocp'][0]:.3f}" for n in NAMES) +
           f"; selector picks {SHORT[base['pick']]}.", ""]
     outliers(md)
     sparsity(md)
     scale(md)
-    with open(os.path.join(HERE, "results", "q3_study.md"), "w") as f:
+    out = f"q3_study_{MODE}.md"
+    with open(os.path.join(HERE, "results", out), "w") as f:
         f.write("\n".join(md) + "\n")
-    print("wrote results/q3_study.md and figures/fig8-fig10")
+    print(f"wrote results/{out} and figures/fig8-fig10" + ("" if MODE == "wx" else " (_w)"))
 
 
 if __name__ == "__main__":

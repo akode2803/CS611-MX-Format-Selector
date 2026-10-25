@@ -1,6 +1,6 @@
 """Tests for scale_opt.py.  Run:  python test_scale_opt.py   (or: pytest test_scale_opt.py)
 
-The hand examples are the ones worked on paper in notes/anuj.md.
+The hand examples are small blocks whose best scale was worked out by hand.
 """
 import os
 import sys
@@ -25,7 +25,7 @@ def test_grid_limits():
         f = S.spec(n)
         assert len(f.grid) == size and f.grid[-1] == vmax and f.grid[1] == smallest and f.nxt == nxt, n
         assert np.all(np.diff(f.grid) > 0), n
-    tc = S.spec("MXINT6")                                       # D10: two's complement
+    tc = S.spec("MXINT6")                                       # A5: two's complement
     assert tc.grid[-1] == 31 / 16 and tc.grid_neg[-1] == 2.0 and tc.nxt_neg == 33 / 16
     assert S.spec("MXINT6_sym").grid_neg is None
 
@@ -96,7 +96,7 @@ def test_floor_log2_exact_near_powers_of_two():
     assert list(S.floor_log2(a)) == [2, 1, 0, -1, -130, 1]
 
 
-# ---------------------------------------------------------------- hand examples (notes/anuj.md)
+# ---------------------------------------------------------------- hand examples (worked by hand)
 def test_hand_example_mxint6_shrinking_the_scale():
     x = np.array([[4.05, 0.3, -0.6, 0.2, 0.9, -0.1, 0.45, 1.1]])
     f = S.spec("MXINT6")

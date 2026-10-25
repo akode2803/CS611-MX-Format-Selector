@@ -1,5 +1,5 @@
 $ python run_baseline.py --variants --fresh
-# exit 0, 0.6 s
+# exit 0, 0.5 s
 
 W (100, 100)  X (100, 256)  formats 11  dataset C  mode w
 
@@ -64,6 +64,6 @@ Saved /Users/aryan/Documents/GitHub/CS611 Assignment/cs611-g8/results/baseline_C
 [stderr]
 
 exhaustive[w]:   0%|          | 0/44 [00:00<?, ?it/s]
-exhaustive[w]:  43%|████▎     | 19/44 [00:00<00:00, 182.87it/s]
-exhaustive[w]:  86%|████████▋ | 38/44 [00:00<00:00, 93.67it/s] 
-exhaustive[w]: 100%|██████████| 44/44 [00:00<00:00, 109.76it/s]
+exhaustive[w]:  27%|██▋       | 12/44 [00:00<00:00, 110.84it/s]
+exhaustive[w]:  91%|█████████ | 40/44 [00:00<00:00, 205.40it/s]
+exhaustive[w]: 100%|██████████| 44/44 [00:00<00:00, 198.49it/s]
