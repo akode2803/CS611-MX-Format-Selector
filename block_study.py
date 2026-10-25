@@ -123,6 +123,27 @@ def main():
                 cw = min(cls, key=cls.get)
                 bb = frontier(rk, [6.32])[0][1]
                 md.append(f"| {k} | {SHORT[cw]} | {SHORT[bb[1]]}, L={bb[2]} ({bb[3]:.2f} bits) | {bb[0]:.3f} | {cls[cw]:.3f} |")
+        md += ["", "## Per-block mixed MX formats (excluded by D4; only to answer \"would it help?\")", "",
+               "Each 32-block takes whichever of the four MX formats has the smallest diag-H error (H from the even "
+               "columns); +2 bits per block = 6.40 bits/element. Held-out Y error % against the best single format.", "",
+               "| dataset | best single format | its error % | per-block mix % | relative reduction |", "|---|---|---|---|---|"]
+        with np.load(p) as d:
+            Xa = d["X_cal"].astype(np.float64)
+            Xf, Xe = split_X(Xa)
+            h = (Xf ** 2).sum(1)
+            for k in "ABCDE":
+                Wk = d["W_" + k].astype(np.float64)
+                Q = {n: quantize(Wk, n)[0] for n in NAMES}
+                err = {n: 100 * np.linalg.norm((Wk - Q[n]) @ Xe) / np.linalg.norm(Wk @ Xe) for n in NAMES}
+                mxs = [n for n in NAMES if n != "BFP6"]
+                Wm = np.empty_like(Wk)
+                for sl in blocks(Wk.shape[1], 32):
+                    pick = np.stack([(((Wk[:, sl] - Q[n][:, sl]) ** 2) * h[sl]).sum(1) for n in mxs]).argmin(0)
+                    for i, n in enumerate(mxs):
+                        Wm[pick == i, sl] = Q[n][pick == i, sl]
+                em = 100 * np.linalg.norm((Wk - Wm) @ Xe) / np.linalg.norm(Wk @ Xe)
+                b = min(err, key=err.get)
+                md.append(f"| {k} | {SHORT[b]} | {err[b]:.3f} | {em:.3f} | {100 * (err[b] - em) / err[b]:.1f}% |")
     md += ["", "ρ = Σ n_nz·4^F / Σw² for that block length (the integer error is ρ·4⁻⁴/12): shorter blocks put each "
            "block maximum closer to its values, so ρ falls and the integer grids gain; FP error is relative to each "
            "value's own binade and only gains through fewer flushed values.", ""]

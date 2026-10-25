@@ -64,9 +64,9 @@ print("Ranking under the class 'ocp' rule only:")
 for i, (f, p, v) in enumerate(ranking(rows, policies=("ocp",)), 1):
     print(f"  {i}. {f:17s} {100*v:6.3f}%")
 
-if ("BFP6_g32e8", "ocp") in by:
-    same = [p for p in pols if by["BFP6_g32e8", p]["y_rel_err"] == by["MXINT6", p]["y_rel_err"]]
-    print(f"\nBFP 32|8|5 (BFP6_g32e8) vs MXINT6: identical under policies {same}")
+if ("BFP6_g32e8", "ocp") in by and ("MXINT6_sym", "ocp") in by:
+    same = [p for p in pols if by["BFP6_g32e8", p]["y_rel_err"] == by["MXINT6_sym", p]["y_rel_err"]]
+    print(f"\nBFP 32|8|5 (BFP6_g32e8) vs MXINT6_sym: identical under policies {same}")
 print(f"BFP6 (16|4|5, the candidate) vs MXINT6 under ocp: "
       f"{100*by['BFP6','ocp']['y_rel_err']:.3f}% vs {100*by['MXINT6','ocp']['y_rel_err']:.3f}%")
 nr = sum(r["n_roundings"] for r in rows)

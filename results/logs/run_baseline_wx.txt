@@ -1,5 +1,5 @@
 $ python run_baseline.py --mode wx --fresh
-# exit 0, 1.3 s
+# exit 0, 0.9 s
 
 W (100, 100)  X (100, 256)  formats 5  dataset C  mode wx
 
@@ -38,11 +38,9 @@ Saved /Users/aryan/Documents/GitHub/CS611 Assignment/cs611-g8/results/baseline_C
 [stderr]
 
 exhaustive[wx]:   0%|          | 0/20 [00:00<?, ?it/s]
-exhaustive[wx]:  10%|█         | 2/20 [00:00<00:01, 10.92it/s]
-exhaustive[wx]:  20%|██        | 4/20 [00:00<00:01, 10.29it/s]
-exhaustive[wx]:  30%|███       | 6/20 [00:00<00:01, 10.38it/s]
-exhaustive[wx]:  45%|████▌     | 9/20 [00:00<00:00, 14.71it/s]
-exhaustive[wx]:  55%|█████▌    | 11/20 [00:00<00:00, 15.80it/s]
-exhaustive[wx]:  80%|████████  | 16/20 [00:00<00:00, 24.15it/s]
-exhaustive[wx]:  95%|█████████▌| 19/20 [00:01<00:00, 25.37it/s]
-exhaustive[wx]: 100%|██████████| 20/20 [00:01<00:00, 19.33it/s]
+exhaustive[wx]:  15%|█▌        | 3/20 [00:00<00:00, 24.41it/s]
+exhaustive[wx]:  35%|███▌      | 7/20 [00:00<00:00, 27.97it/s]
+exhaustive[wx]:  55%|█████▌    | 11/20 [00:00<00:00, 30.44it/s]
+exhaustive[wx]:  75%|███████▌  | 15/20 [00:00<00:00, 31.43it/s]
+exhaustive[wx]: 100%|██████████| 20/20 [00:00<00:00, 31.81it/s]
+exhaustive[wx]: 100%|██████████| 20/20 [00:00<00:00, 30.76it/s]

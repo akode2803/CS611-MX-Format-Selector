@@ -1,5 +1,8 @@
 # Group 8 (Dataset C, 6-bit): research notes and first results
 
+> **Historical (21 Oct).** These notes use provisional conventions that were later fixed (D1 BFP6 16|4|5, D10 two's-complement MXINT6, D13 `ceil`). For current numbers see `results/tables/` and `docs/DECISIONS.md`.
+
+
 Everything below uses **provisional conventions** (OCP MX v1.0 spec, plus my own assumptions for E4M1 and BFP6). Re-run it once the class conventions are known. Code: `formats.py` (the five quantizers) and `explore.py` (all experiments), in this folder.
 
 ## 1. What the literature says

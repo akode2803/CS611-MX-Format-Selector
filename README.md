@@ -1,49 +1,72 @@
 # CS611 Assignment 1, Group 8 (Dataset C, 6-bit)
 
-Picks the best 6-bit format (MXFP6 E3M2 / E2M3 / E4M1, MXINT6, BFP6) for W_C,
-using a histogram-based predictor instead of brute-force quantization.
+Chooses the best 6-bit format (MXFP6 E3M2 / E2M3 / E4M1, MXINT6, BFP6) for W_C, and gives
+one method to make that choice.
+
+**Our selection method (Q2): the exact sketch, H-weighted**, `selector.select_format(W, X_cal)`.
+One pass over W bins every weight by its octave below the block peak and its mantissa, each
+weighted by its input channel's energy H_jj = (X X^T)_jj. A fixed per-format kernel then gives
+every candidate's error, exactly equal to quantizing with that format and measuring the
+diagonal-H output error, but without quantizing W. This is the one method we submit
+(`docs/SELECTOR.md` section 1). The other approaches in `selector.py` are optional additions:
+brute-force references, ablations, extensions and the alternatives we tried (section 2, fig6).
+
+**Answer for C:** MXFP6 E2M3 (held-out Y error 3.101% under the class rule, 3.076% with
+the optimized scale), ahead of BFP6 16|4|5 (3.484%) and MXINT6 (4.054%): `results/tables/T1_main_C.md`.
 
 ## Requirements
-Python 3.8+ and numpy; matplotlib for the figures; tqdm optional for progress bars:
+Python 3.8+ and numpy; matplotlib for the figures; tqdm optional:
 
-    python -m pip install numpy matplotlib tqdm
+    python -m pip install -r requirements.txt
 
 ## Data
-Put `W_C.npy` and `X_cal.npy` in `data/` (already included), or pass
-`--data <folder>` to any script.
+`data/` holds `W_C.npy` and `X_cal.npy`. For datasets A-E pass the course file
+`--npz path/assignment_data.npz` (or set `CS611_DATA`, or put it in `data/`).
 
 ## Run everything (one command)
-    python3 run_all.py              # tests, baselines, all tables, figures, manifest (~5 s)
-    python3 run_all.py --npz path/assignment_data.npz   # + datasets A-E context tables
+    python3 run_all.py --npz path/assignment_data.npz   # tests, baselines, T1-T8, figures, manifest (~15 s)
 
 Outputs: `results/tables/T1..T8.md/.csv`, `results/baseline_C*.csv/.json`, `figures/`,
 `results/logs/`, `results/RUN_MANIFEST.md`. Steps are checkpointed (`--fresh` recomputes).
 
-## Run one piece
-    python3 test_formats.py         # unit tests for the quantizers (30 tests)
-    python3 run_baseline.py         # exhaustive baseline -> results/baseline_C.csv/.json (--variants, --mode wx)
-    python3 validate_predictor.py   # main result: predictor vs brute force, accuracy and cost
-    python3 explore.py              # brute-force table, scale search, X_cal split, sensitivity
-    python3 make_figures.py         # report figures into figures/ (needs: pip install matplotlib)
+## Studies (each regenerates its own results file)
+    python3 bench_selector.py --npz ...   # Q2: our method + optional additions vs brute force -> results/selector_bench.md (~5 min)
+    python3 bench_scaling.py              # Q2: selection cost vs matrix size -> results/selector_scaling.md
+    python3 x_stress.py --npz ...         # Q1/Q2: selection under 11 activation families + X_test shift -> results/x_stress.md
+    python3 q3_study.py                   # Q3: outliers, sparsity, scale variation -> results/q3_study.md
+    python3 block_study.py --npz ...      # block length at equal storage -> results/block_study.md
+    python3 scale_study.py --npz ...      # shared-exponent policies (Anuj) -> results/scale_study.md
+    python3 make_selector_figures.py      # fig6, fig7
+
+## Tests and verification
+    python3 test_formats.py               # quantizers, 31 tests
+    python3 test_selector.py              # selectors (exactness of our method, and of the opt extension), 12 tests
+    python3 test_scale_opt.py             # independent scale-policy implementation, 16 tests
+    python3 verification/test_reference_impl.py   # exact-fraction reference, 16 tests
+    python3 verification/crosscheck.py --impl akash_adapter:quantize --data data/W_C.npy --x data/X_cal.npy
+Three independent implementations (`formats.py`, `scale_opt.py`, `verification/reference_impl.py`)
+agree bit for bit on every candidate, variant and policy (`verification/CLEAN_RUN_.md`).
 
 ## Files
 - `formats.py`: the five quantizers (+ 6 sensitivity variants), scale policies ocp/ceil/opt, W+X mode, metrics, exhaustive harness (API: `FORMATS_API.md`; how it works: `docs/QUANTIZERS.md`)
-- `run_all.py`: regenerates every table and figure
-- `test_formats.py`: unit tests; `run_baseline.py`: exhaustive ground truth for the selector
-- `predictor.py`: the format-selection algorithm (histogram + XX^T metric)
-- `validate_predictor.py`: checks the predictor on W_C and 90 synthetic matrices
-- `explore.py`: exhaustive baseline and the outlier / sparsity / scale experiments
-- `make_figures.py`: generates the four report figures
-- `report/`: draft report (`report_draft.docx`) and its builder script
+- `selector.py`: our method (`select_format`, `METHOD = "sketch_h"`) and every optional approach behind one interface (`ROLE` says which is which); `selector_suite.py`: the permanent test matrices (A-E, 28 adversarial families, 1000 random matrices with 9 activation families)
+- `predictor.py`: Akash's histogram predictor (approximate; BFP6 on 16-blocks); `validate_predictor.py` checks it
+- `scale_opt.py` / `scale_study.py`: Anuj's scale-policy study (below)
+- `q3_study.py`, `block_study.py`, `x_stress.py`, `bench_selector.py`, `bench_scaling.py`: the studies above
+- `run_all.py`, `run_baseline.py`, `explore.py`, `make_figures.py`, `make_selector_figures.py`
+- `verification/`: Siddhant's reference implementation, cross-check harness and reports
+- `docs/`: decisions (`DECISIONS.md`), conventions (`QUANTIZERS.md`), selector (`SELECTOR.md`), Q3 (`Q3_REPORT.md`), team channel
+- `report/`: report draft and its builder
 - `data.py`: data loading; `scipy_free_stats.py`: rank-correlation helper
 
 Format conventions follow the class (Lecture 19 notebook, board notes) and the team
-decisions D1-D11 (BFP6 = 16|4|5, E4M1 vmax 384, ...). They are listed with sources in
-`docs/QUANTIZERS.md` and the docstring at the top of `formats.py`.
+decisions D1-D13 in `docs/DECISIONS.md` (BFP6 = 16|4|5, E4M1 vmax 384, MXINT6 two's
+complement, literal `ceil`, ...), listed with sources in `docs/QUANTIZERS.md` and at the top of `formats.py`.
 
-## Use the predictor on your own matrices
-    from predictor import select
-    best, scores = select(W, X)
+## Use our method on your own matrices
+    import selector as S
+    best, scores = S.select_format(W, X_cal)           # exact class-rule error of every candidate, H-weighted
+    best, scores = S.select(W, h, approach="certified_is_h")   # any optional approach, by name
 
 ## Scale-optimization study (Anuj Chaudhary)
 
@@ -58,7 +81,7 @@ How much does the choice of the shared exponent matter, and does it change which
 Without `--npz`, the course file is looked up like `run_all.py` does (`$CS611_DATA`, then `data/assignment_data.npz`); if it is missing, only C is studied. `run_all.py` runs `scale_study.py` automatically when the file exists.
 
 ### Files
-- `scale_opt.py`: independent implementation of the shared-exponent policies. It does not import `formats.py`, and it uses a different method on purpose (grid lookup for rounding, `ceil` derived as e_ocp or e_ocp + 1 by checking which elements would clip), so it can cross-check `formats.py`. Candidates follow the locked decisions: BFP6 = 16|4|5 (D1, sign + magnitude, 4-bit exponent clamped to [-8, 7]) and MXINT6 = two's complement k in [-32, 31] (D10, revised 23 Oct). Variants: `MXINT6_sym` [-31, 31], `MXFP6_E4M1_v192`, `MXFP6_E4M1_nan1`, `BFP6_g32e8` (= `MXINT6_sym`), `BFP6_b32_ceil` (v1's BFP6). Counters use the Lecture 19 definitions: `n_range` (out of range before rounding) and `n_saturated` (the rounded value is beyond vmax). An integer code has one zero, so MXINT6 decodes a small negative weight to +0.
+- `scale_opt.py`: independent implementation of the shared-exponent policies. It does not import `formats.py`, and it uses a different method on purpose (grid lookup for rounding, `ceil` derived as e_ocp or e_ocp + 1, or e_ocp - 1 for a two's-complement negative maximum of exactly -2^F, by checking which elements would clip), so it can cross-check `formats.py`. Candidates follow the locked decisions: BFP6 = 16|4|5 (D1, sign + magnitude, 4-bit exponent clamped to [-8, 7]) and MXINT6 = two's complement k in [-32, 31] (D10, revised 23 Oct). Variants: `MXINT6_sym` [-31, 31], `MXFP6_E4M1_v192`, `MXFP6_E4M1_nan1`, `BFP6_g32e8` (= `MXINT6_sym`), `BFP6_b32_ceil` (v1's BFP6). Counters use the Lecture 19 definitions: `n_range` (out of range before rounding) and `n_saturated` (the rounded value is beyond vmax). An integer code has one zero, so MXINT6 decodes a small negative weight to +0.
 - `test_scale_opt.py`: unit tests (grids, RNE ties, -0, exact floor(log2), range vs saturated, two's complement, clamps, tail block, policy properties, hand examples).
 - `scale_study.py`: the study; every number below comes from `results/scale_study.md`.
 
@@ -83,7 +106,7 @@ Without `--npz`, the course file is looked up like `run_all.py` does (`$CS611_DA
 | E3M2 | 6.32 | 5.469 | 5.257 | 5.257 | 5.257 | 5.258 | 5.266 | 5.228 |
 | E4M1 | 6.32 | 11.149 | 10.237 | 10.237 | 10.237 | 10.229 | 10.231 | 10.197 |
 
-\* With `formats.py`'s and Siddhant's reading of `ceil` (move up when amax > (31/16) 2^e whatever its sign) it is 4.174; see finding 3 below.
+\* `ceil` here is the literal "smallest scale that clips nothing" (D13): a negative maximum may use the two's-complement code −32. `formats.py` v2.2 and Siddhant's reference now do the same (finding 3).
 
 On all 256 columns the class-rule / opt numbers are E2M3 3.079 / 3.058, BFP6 3.464 / 3.403, MXINT6 4.048 / 3.850, E3M2 5.439 / 5.236, E4M1 11.088 / 10.176, the same as Siddhant's reference (`verification/AGREEMENT_REPORT.md`).
 
@@ -125,12 +148,12 @@ Block max a, E = floor(log2 a), mantissa of the max m = a / 2^E in [1, 2). The c
 ### Cross-checks
 `scale_study.py` writes all of them to section 1 of `results/scale_study.md`.
 - **`formats.py`**: bit-exact comparison on 7 matrices (W_C, Gaussian, Laplace, Student-t, 70% sparse, rows scaled 1e+-6, FP32 maxima at and just below powers of two) under ocp, ceil, opt, opt with H and the +-3 search; formats are matched by definition, so the check works with v1, v2 and after D10 lands in `formats.py`. Against v2 (branch `akash/formats-v2`, re-run 23 Oct): 0 differing elements for all candidates and variants except two's-complement MXINT6 under `ceil` (finding 3); counters on W_C agree in 29 of 30 cases (the same exception); v2's tables T1, T3, T4 and T6 for C have the same numbers. The committed `results/scale_study.md` is generated against the `formats.py` on main (v1 until v2 is merged): rerun `python scale_study.py` after the merge.
-- **Siddhant's reference** (`verification/reference_impl.py`, exact fractions): on W_C, 0 differing elements and 0 signed-zero differences for every format and variant under ocp, ceil and opt, except two's-complement MXINT6 under `ceil` (50 weights).
+- **Siddhant's reference** (`verification/reference_impl.py`, exact fractions): on W_C, 0 differing elements and 0 signed-zero differences for every format and variant under ocp, ceil and opt (since D13 also two's-complement MXINT6 under `ceil`).
 
 Findings:
 1. `np.floor(np.log2(a))` rounds up for a float64 a few ulps below a power of two (a = 7.999999999999999 gave E2M3 exponent 1 instead of 0). It cannot happen for FP32 data (0 of 253 powers of two), so no result changed; fixed in `formats.py` with `np.frexp(a)[1] - 1` (commit 32530fa). `predictor.py` still uses `np.floor(np.log2(...))`, which is harmless on FP32 data.
 2. When the BFP6 4-bit exponent clamp binds, `scale_opt.py` used to search around the unclamped exponent, so the search collapsed to one candidate; v2 and the reference search around the clamped exponent, and `scale_opt.py` now does the same. Never matters on C (the clamp never binds there).
-3. **Resolved (D13, literal reading, formats.py v2.2):** two's-complement MXINT6 under `ceil`. All three implementations now agree. `formats.py` and the reference move the scale up whenever amax > (31/16) 2^e, whatever its sign; a negative maximum down to -2 * 2^e fits the code -32, so nothing clips, and `scale_opt.py` keeps the lower scale (the literal "smallest scale that clips nothing"). Held-out 4.160 vs 4.174. Since D10 makes two's complement the candidate, the `ceil` column of the main tables depends on this choice; the class rule and `opt` agree.
+3. **Resolved (D13, 24 Oct):** two's-complement MXINT6 under `ceil`. `formats.py` v1/v2 and the reference used to move the scale up whenever |max| > (31/16) 2^e, whatever its sign. A negative maximum down to -2 * 2^e fits the code -32, so the literal "smallest scale that clips nothing" keeps the lower scale (and for a maximum of exactly -2^F it is even one exponent below the class rule). All three implementations now follow the literal reading and agree bit for bit; C held-out `ceil` 4.160% (the old reading gave 4.174%). The class rule and `opt` never depended on it.
 4. MXINT6 zero: an integer code has one zero, so `scale_opt.py` and the reference decode a small negative weight to +0; `formats.py` returns -0. Numerically identical.
 
 ### Limitations

@@ -45,5 +45,17 @@ Held-out Y error % (class rule `ocp`; `opt` in brackets for the integer formats)
 | D | E2M3 | E2M3, L=25 (6.32 bits) | 3.001 | 3.152 |
 | E | BFP6 | BFP6, L=13 (6.32 bits) | 2.393 | 2.483 |
 
+## Per-block mixed MX formats (excluded by D4; only to answer "would it help?")
+
+Each 32-block takes whichever of the four MX formats has the smallest diag-H error (H from the even columns); +2 bits per block = 6.40 bits/element. Held-out Y error % against the best single format.
+
+| dataset | best single format | its error % | per-block mix % | relative reduction |
+|---|---|---|---|---|
+| A | E2M3 | 2.849 | 2.748 | 3.6% |
+| B | BFP6 | 1.781 | 1.767 | 0.8% |
+| C | E2M3 | 3.101 | 2.992 | 3.5% |
+| D | E2M3 | 3.152 | 3.049 | 3.3% |
+| E | BFP6 | 2.483 | 2.475 | 0.3% |
+
 ρ = Σ n_nz·4^F / Σw² for that block length (the integer error is ρ·4⁻⁴/12): shorter blocks put each block maximum closer to its values, so ρ falls and the integer grids gain; FP error is relative to each value's own binade and only gains through fewer flushed values.
 

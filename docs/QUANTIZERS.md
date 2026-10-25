@@ -48,16 +48,16 @@ Tags: [CLASS] Lecture 19 notebook / board notes, [SPEC] OCP MX v1.0, [OUR DECISI
 | MXFP6 E3M2 | m = 2, bias 3, emin −2, emax 4, vmax 28 | [CLASS] |
 | MXFP6 E2M3 | m = 3, bias 1, emin 0, emax 2, vmax 7.5 | [CLASS] |
 | MXFP6 E4M1 | m = 1, bias 7, emin −6, emax 8, vmax 384: every code finite, as in the class FP6 formats | [OUR DECISION D3] |
-| MXINT6 | S I F F F F: k·2^−4, k ∈ [−31, 31], block scale 2^floor(log2 max) | board notes; range [OUR DECISION D10] |
+| MXINT6 | S I F F F F: k·2^−4, two's complement k ∈ [−32, 31], block scale 2^floor(log2 max) | board notes; range [OUR DECISION D10, revised 23 Oct]; symmetric [−31, 31] = variant `MXINT6_sym` |
 | BFP6 | g\|e\|m = 16\|4\|5: 16 values share one 4-bit exponent E = floor(log2 max), clamped to [−8, 7]; each value is sign + 5-bit magnitude M, value = ±M·2^(E−4), RNE | board g\|e\|m; parameters [OUR DECISION D1] |
 | Storage | true bits/element including the tail block: MX 6.32, BFP6 16\|4\|5 6.28 | [OUR DECISION D11] |
 | Error measure | relative Frobenius error of Y = W·X on held-out X columns (even fit / odd test), computed in FP64 | [OUR DECISION D6, D8] |
 
 **One-sentence statements the report must contain.**
-- BFP with 32 values, an 8-bit exponent, the floor rule and RNE is numerically identical to MXINT6 (unit test `test_v2_bfp_32_8_5_identical_to_mxint6`). Our BFP6 differs from MXINT6 only through block size (16) and exponent width (4 bits), which costs 6.28 instead of 6.32 bits/element.
+- BFP with 32 values, an 8-bit exponent, the floor rule and RNE is numerically identical to the symmetric `MXINT6_sym` (unit test `test_v2_bfp_32_8_5_identical_to_mxint6_sym`); the candidate MXINT6 also has the two's-complement code −32. Our BFP6 differs from MXINT6_sym only through block size (16) and exponent width (4 bits), which costs 6.28 instead of 6.32 bits/element.
 - The 4-bit BFP exponent limits BFP6 to |w| ≤ 31·2^3 = 248 and to blocks whose max is at least 2^−8. W_C's block exponents lie in [−2, 2], so no block of C is clamped (`T6`, "clamped blocks" = 0).
 - E4M1 conventions (`T3`): no reserved code (vmax 384) 11.15%, top exponent reserved (192) 11.15%, one NaN (256) 20.66% under the class rule. With `ceil`, all three give 10.24%. E4M1 loses to E2M3 under every convention.
-- MXINT6 symmetric vs two's complement (`T8`): ≤ 0.01 pp apart under the class rule on all five datasets, but up to 0.06 pp under `opt`.
+- MXINT6 two's complement vs `MXINT6_sym` (`T8`): ≤ 0.01 pp apart under the class rule on all five datasets, but up to 0.06 pp under `opt`.
 
 ## C. Limitations
 - `opt` searches only 4 exponents per block and uses the block's diagonal slice of XXᵀ when output-aware.

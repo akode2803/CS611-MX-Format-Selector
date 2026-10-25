@@ -1,5 +1,5 @@
 $ python run_baseline.py --variants --fresh
-# exit 0, 0.5 s
+# exit 0, 1.5 s
 
 W (100, 100)  X (100, 256)  formats 11  dataset C  mode w
 
@@ -55,7 +55,7 @@ Ranking under the class 'ocp' rule only:
   10. MXFP6_E4M1        11.088%
   11. MXFP6_E4M1_nan1   20.722%
 
-BFP 32|8|5 (BFP6_g32e8) vs MXINT6: identical under policies []
+BFP 32|8|5 (BFP6_g32e8) vs MXINT6_sym: identical under policies ['ocp', 'ceil', 'opt', 'opt_out']
 BFP6 (16|4|5, the candidate) vs MXINT6 under ocp: 3.464% vs 4.048%
 Cost of this exhaustive run: 1,100,000 element roundings + 112,640,000 MACs
 
@@ -64,6 +64,13 @@ Saved /Users/aryan/Documents/GitHub/CS611 Assignment/cs611-g8/results/baseline_C
 [stderr]
 
 exhaustive[w]:   0%|          | 0/44 [00:00<?, ?it/s]
-exhaustive[w]:  27%|██▋       | 12/44 [00:00<00:00, 114.69it/s]
-exhaustive[w]:  80%|███████▉  | 35/44 [00:00<00:00, 153.23it/s]
-exhaustive[w]: 100%|██████████| 44/44 [00:00<00:00, 149.37it/s]
+exhaustive[w]:   7%|▋         | 3/44 [00:00<00:01, 28.11it/s]
+exhaustive[w]:  14%|█▎        | 6/44 [00:00<00:01, 28.94it/s]
+exhaustive[w]:  23%|██▎       | 10/44 [00:00<00:01, 33.69it/s]
+exhaustive[w]:  32%|███▏      | 14/44 [00:00<00:00, 33.59it/s]
+exhaustive[w]:  41%|████      | 18/44 [00:00<00:00, 30.32it/s]
+exhaustive[w]:  52%|█████▏    | 23/44 [00:00<00:00, 33.91it/s]
+exhaustive[w]:  68%|██████▊   | 30/44 [00:00<00:00, 37.98it/s]
+exhaustive[w]:  80%|███████▉  | 35/44 [00:00<00:00, 40.26it/s]
+exhaustive[w]:  91%|█████████ | 40/44 [00:01<00:00, 34.75it/s]
+exhaustive[w]: 100%|██████████| 44/44 [00:01<00:00, 35.85it/s]

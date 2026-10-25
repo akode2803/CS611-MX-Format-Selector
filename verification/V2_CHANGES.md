@@ -1,5 +1,8 @@
 # formats v2: what changed, file by file (review by Siddhant, 23 Oct)
 
+> **Names changed after this review (24 Oct):** `MXINT6_tc` is now the candidate `MXINT6` (revised D10) and the old symmetric `MXINT6` is `MXINT6_sym`; `BFP6_g32e8` equals `MXINT6_sym`. `ceil` for two's complement follows D13.
+
+
 Source: `formats_v2_changed_files.zip` (41 files) compared with GitHub `6290ea0`. 2,933 lines added, 510 removed.
 ✅ = checked independently (reference implementation, clean run or by hand). `formats.py` was described from its API, docs and tests; its source was not read (independence rule).
 

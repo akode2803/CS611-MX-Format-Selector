@@ -9,8 +9,13 @@ the diagonal part of ||(W - Wq) X||^2 ("way 2": the activations decide how much 
 matters).  select(W, h, approach) returns the argmin.  APPROACHES lists them all, from the
 cheapest rule to brute force, so bench_selector.py can plot accuracy against cost.
 
-The main method: a format-independent sketch plus a per-format kernel
---------------------------------------------------------------------
+OUR METHOD (the one the assignment asks for): METHOD = "sketch_h", called as
+    select_format(W, X_cal) -> (format name, {format: predicted error})
+Every other entry of APPROACHES is an optional addition (ROLE says which kind): brute-force
+references it is measured against, ablations of it, extensions, and the alternatives we tried.
+
+The method: a format-independent sketch plus a per-format kernel
+----------------------------------------------------------------
 For a block with reference exponent R (= floor(log2 max|w|), BFP: clamped to its 4-bit field)
 write each non-zero weight as |w| = mu * 2^t, mu in [1, 2), t = floor(log2|w|), and let
 d = R - t be its octave offset below the block peak.  Under the class rule every candidate's
@@ -141,7 +146,7 @@ def score_sketch(sk, names=None, nb=NB):
 
 # --------------------------------------------------------------------------- approaches
 def sketch_select(W, h=None, nb=NB, frac=1.0, rng=None):
-    """Approach 2 (main): sketch + kernel; nb=64 is exact for the class rule."""
+    """Sketch + kernel; nb=64 is exact for the class rule.  With h: OUR METHOD (sketch_h)."""
     return score_sketch(sketch(W, h, nb, frac, rng), nb=nb)
 
 
@@ -202,12 +207,9 @@ def hybrid(W, h=None):
 
 
 def akash_hist(W, h=None):
-    """Akash's predictor.py (v1), adapted: BFP6 scored on 16-blocks with the integer grid."""
+    """Akash's predictor.py (BFP6 scored on 16-blocks since 24 Oct)."""
     from predictor import build_stats, predict
-    H = None if h is None else np.diag(h)
-    out = predict(build_stats(W, H), [n for n in CANDIDATES if n != "BFP6"])
-    out["BFP6"] = predict(build_stats(W, H, block=16), ["MXINT6"])["MXINT6"]
-    return out
+    return predict(build_stats(W, None if h is None else np.diag(h)), CANDIDATES)
 
 
 def exhaustive(W, h=None, X=None, policy="ocp"):
@@ -322,6 +324,142 @@ def _unit_errors(Wu, Hu, name, nb=NB):
 certified.last = None
 
 
+# --------------------------------------------------------------------------- opt policy, exactly
+OPT_ORDER = (0, -1, 1, -2)        # formats.py tries offsets in this order and keeps the first minimum
+
+
+def _block_errors(Wu, Hu, name, off, nb=NB):
+    """Exact error of every block (columns: blocks inside each unit) with the scale exponent
+    moved by `off` from the class rule, as (weight error, H-weighted error).  BFP keeps the
+    moved exponent inside its 4-bit field, as formats.py does."""
+    A = np.abs(Wu)
+    nz = A > 0
+    f, ex = np.frexp(np.where(nz, A, 1.0))
+    t = ex - 1.0
+    mu = 2.0 * f
+    j = np.minimum(((mu - 1.0) * nb).astype(int), nb - 1)
+    block, field = _family(name)
+    R = _ref_exp(A, block, field)
+    eff = off if field is None else np.clip(R + off, field[0], field[1]) - R
+    d = np.clip(R - t + eff, DMIN, DMAX).astype(int) - DMIN
+    K = kernel(name, nb)[(Wu < 0).astype(int), d, j]
+    m0 = 4.0 ** t
+    e = nz * (K[..., 0] * A ** 2 + K[..., 1] * m0 * mu + K[..., 2] * m0)
+    n = Wu.shape[0]
+    return e.reshape(n, -1, block).sum(2), (Hu * e).reshape(n, -1, block).sum(2)
+
+
+def sketch_opt(W, h=None):
+    """Exact prediction of the `opt` policy (per block, the best of e_ocp + {-2..+1} by weight
+    error): the kernel scores every offset without rounding anything."""
+    Wu, Hu = _units(np.asarray(W, dtype=np.float64), h)
+    out = {}
+    for name in CANDIDATES:
+        best_w = best_h = None
+        for off in OPT_ORDER:
+            ew, eh = _block_errors(Wu, Hu, name, off)
+            if best_w is None:
+                best_w, best_h = ew, eh
+            else:
+                better = ew < best_w
+                best_w = np.where(better, ew, best_w)
+                best_h = np.where(better, eh, best_h)
+        out[name] = float(best_h.sum())
+    return out
+
+
+# --------------------------------------------------------------------------- literature-style baselines
+def exhaustive_opt(W, h=None):
+    """ANT / MoFQ style: quantize with every candidate, searching the scale per block (range
+    clipping), keep the minimum error."""
+    return exhaustive(W, h, policy="opt")
+
+
+def ant_rule(W, h=None):
+    """ANT's qualitative rule (Guo et al. 2022): integer for uniform-like, 'flint' (most
+    mantissa bits) for Gaussian-like, float for Laplace-like tensors.  Mapped here to BFP6,
+    E2M3 and E3M2 by the kurtosis of the non-zero weights (1.8, 3, 6), nearest in log."""
+    nzv = W[W != 0]
+    x = nzv - nzv.mean()
+    k = (x ** 4).mean() / max((x ** 2).mean() ** 2, 1e-300)
+    proto = {"BFP6": 1.8, "MXFP6_E2M3": 3.0, "MXFP6_E3M2": 6.0}
+    lab = min(proto, key=lambda n: abs(np.log(k / proto[n])))
+    return {n: 0.0 if n == lab else 1.0 for n in CANDIDATES}
+
+
+def dist_fit(W, h=None, family="t", reps=2, seed=0):
+    """Parametric baseline (the analytic-MSE approach of Kuzmin et al. 2022 and the Student-t
+    fits of Dotzel et al. 2024): fit a distribution to the non-zero weights (Gaussian: std;
+    Laplace: mean |w|; Student-t: degrees of freedom from the kurtosis, then the std), keep
+    the sparsity, and score each format by its exact error on synthetic matrices drawn from
+    the fit.  It sees the shape of the distribution, not where the large values sit."""
+    W = np.asarray(W, dtype=np.float64)
+    nzv = W[W != 0]
+    p0 = 1 - nzv.size / W.size
+    sd = nzv.std()
+    rng = np.random.default_rng(seed)
+    tot = {n: 0.0 for n in CANDIDATES}
+    for _ in range(reps):
+        if family == "gauss":
+            Z = rng.standard_normal(W.shape) * sd
+        elif family == "laplace":
+            Z = rng.laplace(0, np.abs(nzv).mean(), W.shape)
+        else:
+            x = nzv - nzv.mean()
+            k = (x ** 4).mean() / max((x ** 2).mean() ** 2, 1e-300)
+            nu = 4 + 6 / (k - 3) if k > 3.05 else 200.0
+            Z = rng.standard_t(nu, W.shape) * sd / np.sqrt(nu / (nu - 2))
+        Z = Z * (rng.random(W.shape) >= p0)
+        sc = sketch_select(Z)
+        e = (Z ** 2).sum()
+        for n in CANDIDATES:
+            tot[n] += sc[n] / e
+    return tot
+
+
+def certified_rows_y(W, h=None, X=None, n0=8, z=3.0, rng=None):
+    """Full-H brute force on a certified sample of rows: ||(W - Wq) X||^2 is a sum over rows,
+    so quantize only sampled rows (probability ~ row energy in Y), estimate each format's total
+    (Hansen-Hurwitz) and double the sample until the winner leads every other format by z
+    standard errors.  Fixes the correlated-X case the diagonal-H methods miss.
+    certified_rows_y.last = (distinct rows quantized, total rows, certified?)."""
+    W = np.asarray(W, dtype=np.float64)
+    r = W.shape[0]
+    q = ((W @ X) ** 2).sum(1)
+    if q.sum() == 0:
+        certified_rows_y.last = (0, r, True)
+        return {n: 0.0 for n in CANDIDATES}
+    pi = 0.7 * q / q.sum() + 0.3 / r
+    rng = rng or np.random.default_rng(0)
+    draws = np.empty(0, dtype=int)
+    cache = {}
+    n = n0
+    while True:
+        draws = np.concatenate([draws, rng.choice(r, n - draws.size, p=pi)])
+        uniq = np.unique(draws)
+        new = [i for i in uniq if i not in cache]
+        if new:
+            Wn = W[new]
+            E = np.stack([(((Wn - quantize(Wn, f)[0]) @ X) ** 2).sum(1) for f in CANDIDATES], 1)
+            cache.update({i: E[k] for k, i in enumerate(new)})
+        if uniq.size >= r:
+            tot = np.sum([cache[i] for i in range(r)], 0)
+            certified_rows_y.last = (r, r, True)
+            return {f: float(v) for f, v in zip(CANDIDATES, tot)}
+        Y = np.stack([cache[i] for i in draws]) / pi[draws][:, None]
+        tot = Y.mean(0)
+        b = int(tot.argmin())
+        ok = all((Y[:, o] - Y[:, b]).mean() > z * (Y[:, o] - Y[:, b]).std(ddof=1) / np.sqrt(len(draws))
+                 for o in range(len(CANDIDATES)) if o != b)
+        if ok:
+            certified_rows_y.last = (uniq.size, r, True)
+            return {f: float(v) for f, v in zip(CANDIDATES, tot)}
+        n = 2 * len(draws)
+
+
+certified_rows_y.last = None
+
+
 # --------------------------------------------------------------------------- learned rule
 FEATURES = ("sparsity", "kurtosis_nz", "log_rho32", "log_rho16", "log_phi", "flush_frac")
 
@@ -403,17 +541,51 @@ APPROACHES = {
     "exh_rows10":     (exhaustive_rows, {"frac": 0.1}, False, "sampled", "quantize 10% of rows"),
     "exhaustive_w":   (exhaustive, {}, False, "brute", "quantize all 5, weight error"),
     "exhaustive_h":   (exhaustive, {}, True, "brute", "quantize all 5, diag-H error"),
+    "ant_rule":       (ant_rule, {}, False, "features", "ANT-style shape rule: kurtosis -> int / flint / float"),
+    "fit_gauss":      (dist_fit, {"family": "gauss"}, False, "fit", "Gaussian fit + exact error on synthetic draws"),
+    "fit_laplace":    (dist_fit, {"family": "laplace"}, False, "fit", "Laplace fit + exact error on synthetic draws"),
+    "fit_t":          (dist_fit, {"family": "t"}, False, "fit", "Student-t fit (df from kurtosis) + exact error"),
+    "sketch_opt_h":   (sketch_opt, {}, True, "sketch", "exact prediction of the `opt` policy, diag-H"),
+    "exhaustive_opt": (exhaustive_opt, {}, False, "brute", "ANT/MoFQ: brute force with per-block scale search"),
+    "certified_rows_y": (certified_rows_y, {}, True, "sampled", "full-H brute force on a certified row sample"),
 }
+NEEDS_X = {"certified_rows_y"}
+
+# The submitted method, and what every other approach is for.
+METHOD = "sketch_h"
+ROLE = {METHOD: "method"}
+ROLE.update(dict.fromkeys(("exhaustive_w", "exhaustive_h", "exhaustive_y", "exhaustive_opt"), "reference"))
+ROLE.update(dict.fromkeys(("sketch", "sketch_nb1_h", "sketch_nb4_h", "sketch_nb16_h", "closed_form",
+                           "closed_form_h"), "ablation"))
+ROLE.update(dict.fromkeys(("sketch_s10_h", "certified_h", "certified_is_h", "certified_rows_y", "sketch_opt_h"),
+                          "extension"))
+ROLE.update(dict.fromkeys(("learned_tree", "akash_hist_h", "m1", "m1_h", "hybrid_h", "exh_rows10", "ant_rule",
+                           "fit_gauss", "fit_laplace", "fit_t"), "alternative"))
+ROLE_TEXT = {"method": "OUR METHOD",
+             "reference": "optional: brute-force reference (what the method is measured against)",
+             "ablation": "optional: ablation of the method (way 1, coarser bins, closed form)",
+             "extension": "optional: extension (sampling for large W, full H, `opt` policy)",
+             "alternative": "optional: alternative we tried (literature or our own)"}
 
 
 def run(name, W, h=None, X=None, **extra):
-    """Run one registered approach; returns (scores, seconds)."""
+    """Run one registered approach; returns (scores, seconds).  X = calibration columns, used
+    only by approaches in NEEDS_X."""
     fn, kw, uses_h, _, _ = APPROACHES[name]
+    if name in NEEDS_X:
+        kw = {**kw, "X": X}
     t0 = time.perf_counter()
     sc = fn(W, h if uses_h else None, **{**kw, **extra})
     return sc, time.perf_counter() - t0
 
 
-def select(W, h=None, approach="sketch_h"):
+def select(W, h=None, approach=METHOD):
     sc, _ = run(approach, W, h)
     return min(sc, key=sc.get), sc
+
+
+def select_format(W, X_cal):
+    """OUR METHOD.  h_j = sum over calibration columns of X_j^2 (the diagonal of X X^T), then the
+    exact sketch scores all five candidates without quantizing W; returns (best, scores)."""
+    X_cal = np.asarray(X_cal, dtype=np.float64)
+    return select(np.asarray(W, dtype=np.float64), (X_cal ** 2).sum(1), METHOD)
