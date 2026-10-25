@@ -86,9 +86,9 @@ Truth is the held-out Y error (odd X columns) under the class rule; H comes from
 
 | | Top-1 | Mean regret | p95 | Max | Median time |
 |---|---|---|---|---|---|
-| **Our method (exact sketch, H-weighted)** | **93.3%** | **0.031 dB** | **0.06 dB** | 3.8 dB | **1.04 ms** |
-| brute force, diagonal H (reference) | 93.3% (same picks) | 0.031 dB | 0.06 dB | 3.8 dB | 2.59 ms |
-| brute force, weights only (reference, way 1) | 82.3% | 0.475 dB | 3.3 dB | 20.8 dB | 2.54 ms |
+| **Our method (exact sketch, H-weighted)** | **93.3%** | **0.031 dB** | **0.06 dB** | 3.8 dB | **0.77 ms** |
+| brute force, diagonal H (reference) | 93.3% (same picks) | 0.031 dB | 0.06 dB | 3.8 dB | 1.81 ms |
+| brute force, weights only (reference, way 1) | 82.3% | 0.475 dB | 3.3 dB | 20.8 dB | 1.77 ms |
 
 **By activation family** (top-1 / mean regret):
 
@@ -103,12 +103,12 @@ Truth is the held-out Y error (odd X columns) under the class rule; H comes from
 - **The X_cal-based choice for C costs at most 0.011 dB** on any X_test family. A, D and E can lose up to 0.7, 0.9 and 1.5 dB when X_test is far from X_cal (low rank or massive activations). No selector can avoid that without seeing X_test.
 
 **Cost at scale** (`results/selector_scaling.md`, LLM-like 4096 × 4096 = 16.8M weights):
-- In NumPy the sketch takes 2.2 s, about the same as brute force (2.0 s). Both are memory-bound.
+- In NumPy the sketch takes 1.7 s against 2.0 s for brute force. Both are memory-bound.
 - The sketch's advantage is the shared single pass, not raw speed in NumPy.
-- The certified extension (§2) needs 0.17 s and rounds 0.10% of the blocks.
+- The certified extension (§2) needs 0.14 s and rounds 0.10% of the blocks.
 
 ### 1.5 Limitations of our method
-- **Diagonal H only.** When X is strongly correlated (low rank), the realized error depends on the projection of ΔW onto a few directions, and no expectation predicts it. Top-1 is 83.7% there, against 98.1% for brute force with the full H. The optional `certified_rows_y` (§2) handles this case (97.1%) at 17× the cost.
+- **Diagonal H only.** When X is strongly correlated (low rank), the realized error depends on the projection of ΔW onto a few directions, and no expectation predicts it. Top-1 is 83.7% there, against 98.1% for brute force with the full H. The optional `certified_rows_y` (§2) handles this case (97.1%) at 12× the cost.
 - **Class rule.** The method scores the class rule `ocp`. The `opt` policy is covered by the optional `sketch_opt_h` (§2).
 - **BFP's exponent clamp** is modelled for d ≥ −8. Blocks more than 8 octaves above the clamp are not modelled.
 - **Test data.** The random families are ours. Only A–E are course data, and those are synthetic too.
@@ -120,29 +120,29 @@ Results on the random suite below; datasets and adversarial in `results/selector
 
 | Role | Approach | Top-1 | Mean regret | ms | What it shows |
 |---|---|---|---|---|---|
-| **our method** | **`sketch_h`** | **93.3%** | **0.031 dB** | **1.04** | |
-| reference | `exhaustive_h` | 93.3% | 0.031 dB | 2.59 | brute force, diagonal H: identical picks, so the method is exact |
-| reference | `exhaustive_w` | 82.3% | 0.475 dB | 2.54 | brute force, weight error (way 1) |
-| reference | `exhaustive_y` | 96.2% | 0.010 dB | 26.5 | brute force, full Y on the fit columns: the ceiling for anything that sees only X_cal |
-| reference | `exhaustive_opt` | 81.2% | 0.503 dB | 10.2 | ANT/MoFQ style: trial quantization with a per-block scale search, weight MSE |
-| ablation | `sketch` | 82.3% | 0.475 dB | 1.05 | the method without H (way 1): same picks as weight brute force |
-| ablation | `sketch_nb16_h` | 91.8% | 0.047 dB | 0.96 | 16 mantissa bins instead of 64 |
-| ablation | `sketch_nb4_h` | 87.1% | 0.084 dB | 0.97 | 4 bins |
-| ablation | `sketch_nb1_h` | 80.8% | 0.201 dB | 1.02 | 1 bin per octave |
-| ablation | `closed_form(_h)` | 40.9% (42.2%) | 2.3 dB | 0.63 | coarsest level, two statistics ρ and φ: no flush or clip terms |
-| extension | `certified_is_h` | 92.5% | 0.043 dB | 3.03 | importance sample of blocks ∝ Σh·4^F, Hansen–Hurwitz estimate, doubled until the winner leads by 3 s.e.; reads a median 13% of blocks (0.10% at 4096²) |
-| extension | `certified_h` | 92.7% | 0.040 dB | 12.8 | the same with uniform sampling |
-| extension | `sketch_s10_h` | 71.2% | 0.759 dB | 0.37 | the sketch on a fixed 10% of blocks, uncertified |
-| extension | `certified_rows_y` | 95.6% | 0.017 dB | 17.3 | full-H brute force on an importance sample of rows ∝ ‖WᵢX‖²; reads a median 41% of rows; fixes low-rank X (97.1%) |
-| extension | `sketch_opt_h` | 89.5% (92.8% vs `opt` truth) | 0.036 dB vs `opt` | 26.7 | exact prediction of the `opt` policy: the per-block sketch scores each scale offset |
-| alternative | `hybrid_h` | 90.6% | 0.054 dB | 4.79 | M1 with the top octave rounded exactly |
-| alternative | `akash_hist_h` | 89.3% | 0.062 dB | 3.91 | Akash's `predictor.py`: expected error per histogram bin, block maxima exact |
-| alternative | `m1_h` (`m1`) | 88.4% (80.6%) | 0.078 dB | 2.44 | per-element expected error: step²/12, flush z², clip (z − vmax)² |
-| alternative | `learned_tree` | 73.4% | 0.680 dB | 1.24 | CART (depth 4) on sparsity, kurtosis, ρ32, ρ16, φ, flush fraction; trained on 600 separate matrices |
-| alternative | `exh_rows10` | 70.1% | 0.838 dB | 1.22 | brute force on 10% of rows |
-| alternative | `fit_gauss` | 61.8% | 1.136 dB | 3.04 | fit a Gaussian, score synthetic draws exactly |
-| alternative | `fit_t`, `fit_laplace` | 53.7% | 1.781 dB | 4.09 | Student-t (SF4-style) or Laplace fit, same scoring |
-| alternative | `ant_rule` | 5.9% | 7.25 dB | 0.29 | shape rule in the spirit of ANT's motivation (kurtosis → int / flint / float); not ANT's algorithm, which is trial quantization |
+| **our method** | **`sketch_h`** | **93.3%** | **0.031 dB** | **0.77** | |
+| reference | `exhaustive_h` | 93.3% | 0.031 dB | 1.81 | brute force, diagonal H: identical picks, so the method is exact |
+| reference | `exhaustive_w` | 82.3% | 0.475 dB | 1.77 | brute force, weight error (way 1) |
+| reference | `exhaustive_y` | 96.2% | 0.010 dB | 6.39 | brute force, full Y on the fit columns: the ceiling for anything that sees only X_cal |
+| reference | `exhaustive_opt` | 81.2% | 0.503 dB | 7.31 | ANT/MoFQ style: trial quantization with a per-block scale search, weight MSE |
+| ablation | `sketch` | 82.3% | 0.475 dB | 0.79 | the method without H (way 1): same picks as weight brute force |
+| ablation | `sketch_nb16_h` | 91.8% | 0.047 dB | 0.71 | 16 mantissa bins instead of 64 |
+| ablation | `sketch_nb4_h` | 87.1% | 0.084 dB | 0.73 | 4 bins |
+| ablation | `sketch_nb1_h` | 80.8% | 0.201 dB | 0.76 | 1 bin per octave |
+| ablation | `closed_form(_h)` | 40.9% (42.2%) | 2.3 dB | 0.45 | coarsest level, two statistics ρ and φ: no flush or clip terms |
+| extension | `certified_is_h` | 92.5% | 0.043 dB | 2.28 | importance sample of blocks ∝ Σh·4^F, Hansen–Hurwitz estimate, doubled until the winner leads by 3 s.e.; reads a median 13% of blocks (0.10% at 4096²) |
+| extension | `certified_h` | 92.7% | 0.040 dB | 9.26 | the same with uniform sampling |
+| extension | `sketch_s10_h` | 71.2% | 0.759 dB | 0.27 | the sketch on a fixed 10% of blocks, uncertified |
+| extension | `certified_rows_y` | 95.6% | 0.017 dB | 9.60 | full-H brute force on an importance sample of rows ∝ ‖WᵢX‖²; reads a median 41% of rows; fixes low-rank X (97.1%) |
+| extension | `sketch_opt_h` | 89.5% (92.8% vs `opt` truth) | 0.036 dB vs `opt` | 19.4 | exact prediction of the `opt` policy: the per-block sketch scores each scale offset |
+| alternative | `hybrid_h` | 90.6% | 0.054 dB | 3.56 | M1 with the top octave rounded exactly |
+| alternative | `akash_hist_h` | 89.3% | 0.062 dB | 2.87 | Akash's `predictor.py`: expected error per histogram bin, block maxima exact |
+| alternative | `m1_h` (`m1`) | 88.4% (80.6%) | 0.078 dB | 1.73 | per-element expected error: step²/12, flush z², clip (z − vmax)² |
+| alternative | `learned_tree` | 73.4% | 0.680 dB | 0.85 | CART (depth 4) on sparsity, kurtosis, ρ32, ρ16, φ, flush fraction; trained on 600 separate matrices |
+| alternative | `exh_rows10` | 70.1% | 0.838 dB | 0.86 | brute force on 10% of rows |
+| alternative | `fit_gauss` | 61.8% | 1.136 dB | 2.31 | fit a Gaussian, score synthetic draws exactly |
+| alternative | `fit_t`, `fit_laplace` | 53.7% | 1.781 dB | 3.05 | Student-t (SF4-style) or Laplace fit, same scoring |
+| alternative | `ant_rule` | 5.9% | 7.25 dB | 0.22 | shape rule in the spirit of ANT's motivation (kurtosis → int / flint / float); not ANT's algorithm, which is trial quantization |
 
 **What the additions show:**
 - **Why way 2:** the way-1 rows are 11 points lower, and fall to 58–63% on outlier channels and massive activations.

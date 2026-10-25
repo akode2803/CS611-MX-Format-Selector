@@ -18,7 +18,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.03825491695897654,
+  "seconds": 0.035480374994222075,
   "fingerprint": "b51351605a635942"
  },
  {
@@ -40,7 +40,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.021302041015587747,
+  "seconds": 0.005095207947306335,
   "fingerprint": "2b6683025766f07f"
  },
  {
@@ -62,7 +62,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.05614104098640382,
+  "seconds": 0.006359625025652349,
   "fingerprint": "18f4145176386b41"
  },
  {
@@ -84,7 +84,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.04502854199381545,
+  "seconds": 0.011897249962203205,
   "fingerprint": "51271922e7492709"
  },
  {
@@ -106,7 +106,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.0070802089758217335,
+  "seconds": 0.004543207993265241,
   "fingerprint": "7140deaffa998df0"
  },
  {
@@ -128,7 +128,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.030588749970775098,
+  "seconds": 0.0029865410178899765,
   "fingerprint": "05adc21fa5b7bbbd"
  },
  {
@@ -150,7 +150,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.04405199998291209,
+  "seconds": 0.0060775839956477284,
   "fingerprint": "192e6fd12aff4a38"
  },
  {
@@ -172,7 +172,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.0317961250548251,
+  "seconds": 0.008369999995920807,
   "fingerprint": "9468e71c65e4b50a"
  },
  {
@@ -194,7 +194,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.02161554101621732,
+  "seconds": 0.002593790995888412,
   "fingerprint": "efafeb88e2af2430"
  },
  {
@@ -216,7 +216,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.03542670898605138,
+  "seconds": 0.0046950000105425715,
   "fingerprint": "b3f2f99230ffd918"
  },
  {
@@ -238,7 +238,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.027764375030528754,
+  "seconds": 0.004354292002972215,
   "fingerprint": "0f24b14ed2e35042"
  },
  {
@@ -260,7 +260,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.027517708018422127,
+  "seconds": 0.016094791993964463,
   "fingerprint": "aed81d3da0c60f2a"
  },
  {
@@ -282,7 +282,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.008980582992080599,
+  "seconds": 0.0021847080206498504,
   "fingerprint": "35d41f4430ed9833"
  },
  {
@@ -304,7 +304,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.050609499972779304,
+  "seconds": 0.0017542499699629843,
   "fingerprint": "75eb14c87de827ce"
  },
  {
@@ -326,7 +326,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.03120633400976658,
+  "seconds": 0.002291250042617321,
   "fingerprint": "025ca0a91cd36d96"
  },
  {
@@ -348,7 +348,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.035599666996859014,
+  "seconds": 0.005911000014748424,
   "fingerprint": "5ce96b33bbb9aa30"
  },
  {
@@ -370,7 +370,7 @@
   "bits_per_elem": 6.28,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.011443166993558407,
+  "seconds": 0.0015921249869279563,
   "fingerprint": "4b0dbb3ebf1b168b"
  },
  {
@@ -392,7 +392,7 @@
   "bits_per_elem": 6.28,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.008989083056803793,
+  "seconds": 0.03429833299014717,
   "fingerprint": "1bf1eb73b82d596c"
  },
  {
@@ -414,7 +414,7 @@
   "bits_per_elem": 6.28,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.016792417038232088,
+  "seconds": 0.0044668749906122684,
   "fingerprint": "01880bce64d7906e"
  },
  {
@@ -436,7 +436,7 @@
   "bits_per_elem": 6.28,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.07685179199324921,
+  "seconds": 0.007504291948862374,
   "fingerprint": "9e148e6eec54e3f9"
  }
 ]
