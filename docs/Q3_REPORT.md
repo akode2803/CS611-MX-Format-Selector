@@ -51,13 +51,25 @@ We replaced n weights of W_C by ±k·σ, with continuous magnitudes k·σ·U(0.7
   The block scale follows the strongest channel in each block, and only the formats with many exponent bits keep the weak channels representable.
 - **With a global metric and a nearly white X**, the weak channels contribute almost nothing to Y, so E2M3 stays best. If the activations amplified the weak channels, the H-weighted selector (way 2, `docs/SELECTOR.md`) would see it: weighting by (XXᵀ)_jj is exactly what moves the objective toward those channels.
 
-## 4. What this means for the selector
+## 4. Block organisation (`python block_study.py`, `results/block_study.md`, fig11)
+With K = 100 only the number of blocks per row sets the cost, and each format pays its own scale width (8 bits for MX, 4 bits for BFP).
+
+- **At equal block length, the integer grid gains most from shorter blocks.** Its error is ρ·4⁻⁴/12, and ρ falls from 8.05 (one block per row) to 0.96 (blocks of 2). E2M3 changes little: 3.39% → 2.86%. MXINT6 overtakes E2M3 from blocks of 8 down (2.83% vs 2.93%), but that costs 7.04 bits/element with an 8-bit scale.
+- **At equal storage, the fair comparison, E2M3 stays best up to about 6.5 bits/element** (C: 3.082% at 6.32 bits with 4 blocks per row).
+- **Above 6.5 bits/element, BFP with short groups wins**, because its 4-bit exponent buys twice as many blocks per bit: 2.83% at 6.52 bits (groups of 8), 2.30% at 7.0 bits (groups of 4).
+- **At the same 6.32 bits/element:**
+  - BFP6 at groups of 13 would win A (2.796% vs E2M3 2.849%) and E (2.393%).
+  - C and D stay E2M3.
+  - BFP6 16|4|5 (6.28 bits) is our candidate as decided (D1).
+- **Block length 25 vs 32:** E2M3 at 25 gives 3.082% against 3.101% at 32, but both lengths give 4 blocks per row. The difference comes from K = 100, not from a design choice; the class layout stays MX 32 (D9).
+
+## 5. What this means for the selector
 The winner moves with three measurable quantities:
 - block-peak energy (ρ, which falls with sparsity and favours BFP6 and MXINT6)
 - energy flushed to zero inside outlier blocks
 - whether any block leaves BFP6's 4-bit exponent range
 
-The exact sketch selector (`selector.py`, H from the even columns) picks the held-out winner in every cell except near-ties: 80–90% of seeds where the margin is smaller than its seed-to-seed sd. All three quantities are in its sketch.
+Our selection method (the exact sketch, H-weighted: `selector.select_format`, H from the even columns) picks the held-out winner in every cell except near-ties: 80–90% of seeds where the margin is smaller than its seed-to-seed sd. All three quantities are in its sketch.
 
 ## Changes from the first draft
 - Uses D1's BFP6 (16|4|5) and D10's MXINT6; the old BFP6 was numerically MXINT6.
@@ -67,4 +79,4 @@ The exact sketch selector (`selector.py`, H from the even columns) picks the hel
 - Weak-group metric alongside the global one; the row-gain experiment explained as a near-null control.
 - Mechanism counts and closed-form statistics; three figures; one script regenerates everything.
 
-**Not redone here:** the block-size study (review §3.3). The scale-rule study is Anuj's `results/scale_study.md`.
+The scale-rule study is Anuj's `results/scale_study.md`.

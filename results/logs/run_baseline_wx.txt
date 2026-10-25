@@ -1,5 +1,5 @@
 $ python run_baseline.py --mode wx --fresh
-# exit 0, 0.4 s
+# exit 0, 0.9 s
 
 W (100, 100)  X (100, 256)  formats 5  dataset C  mode wx
 
@@ -8,7 +8,7 @@ format                         ocp             ceil              opt          op
 MXFP6_E3M2           7.712 [ 7.70]    7.398 [ 7.41]    7.398 [ 7.41]    7.393 [ 7.41]     6.32
 MXFP6_E2M3           4.224 [ 4.24]    4.241 [ 4.26]    4.191 [ 4.21]    4.192 [ 4.21]     6.32
 MXFP6_E4M1          15.872 [15.93]   14.412 [14.58]   14.412 [14.58]   14.391 [14.55]     6.32
-MXINT6               5.163 [ 5.21]    5.358 [ 5.40]    4.883 [ 4.97]    4.899 [ 5.00]     6.32
+MXINT6               5.163 [ 5.21]    5.292 [ 5.34]    4.883 [ 4.97]    4.899 [ 5.00]     6.32
 BFP6                 4.478 [ 4.56]    4.615 [ 4.68]    4.394 [ 4.48]    4.391 [ 4.48]     6.28
 
 Element counts under the class 'ocp' rule (Lecture 19 definitions: range = out of range before rounding, saturated = rounded value clipped):
@@ -38,5 +38,9 @@ Saved /Users/aryan/Documents/GitHub/CS611 Assignment/cs611-g8/results/baseline_C
 [stderr]
 
 exhaustive[wx]:   0%|          | 0/20 [00:00<?, ?it/s]
-exhaustive[wx]:  30%|███       | 6/20 [00:00<00:00, 58.41it/s]
-exhaustive[wx]: 100%|██████████| 20/20 [00:00<00:00, 98.73it/s]
+exhaustive[wx]:  15%|█▌        | 3/20 [00:00<00:00, 24.41it/s]
+exhaustive[wx]:  35%|███▌      | 7/20 [00:00<00:00, 27.97it/s]
+exhaustive[wx]:  55%|█████▌    | 11/20 [00:00<00:00, 30.44it/s]
+exhaustive[wx]:  75%|███████▌  | 15/20 [00:00<00:00, 31.43it/s]
+exhaustive[wx]: 100%|██████████| 20/20 [00:00<00:00, 31.81it/s]
+exhaustive[wx]: 100%|██████████| 20/20 [00:00<00:00, 30.76it/s]

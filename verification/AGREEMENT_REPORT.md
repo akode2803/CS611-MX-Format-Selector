@@ -1,5 +1,8 @@
 # Independent verification of `formats.py` v2 (Siddhant), 23 Oct
 
+> **Names changed after this report (24 Oct):** with the revised D10, `MXINT6` is two's complement (the `MXINT6_tc` here) and the symmetric code is `MXINT6_sym` (the `MXINT6` here). D13 made `ceil` literal for two's complement. v2 is on main (PR #7) and `verification/CLEAN_RUN_.md` re-verifies it: 217/217 bit-exact.
+
+
 Tested: Akash's `formats_v2_changed_files.zip` (files dated 22 Oct 08:50) laid over GitHub commit `6290ea0`.
 **v2 is not on GitHub yet**: once it is pushed, rerun the commands below on the pushed commit and put its hash here.
 

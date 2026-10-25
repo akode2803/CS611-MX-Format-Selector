@@ -194,7 +194,7 @@
   "rule": "ceil",
   "n": 1700,
   "mismatches": 0,
-  "signed_zero_diffs": 136,
+  "signed_zero_diffs": 134,
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "adversarial"
@@ -504,7 +504,7 @@
   "rule": "ceil",
   "n": 5000,
   "mismatches": 0,
-  "signed_zero_diffs": 122,
+  "signed_zero_diffs": 117,
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "gauss"
@@ -814,7 +814,7 @@
   "rule": "ceil",
   "n": 5000,
   "mismatches": 0,
-  "signed_zero_diffs": 231,
+  "signed_zero_diffs": 230,
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "laplace"
@@ -1124,7 +1124,7 @@
   "rule": "ceil",
   "n": 5000,
   "mismatches": 0,
-  "signed_zero_diffs": 325,
+  "signed_zero_diffs": 320,
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "student_t2"
@@ -1744,7 +1744,7 @@
   "rule": "ceil",
   "n": 5000,
   "mismatches": 0,
-  "signed_zero_diffs": 111,
+  "signed_zero_diffs": 107,
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "wide_scale"
@@ -1868,8 +1868,8 @@
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "dataset",
-  "y_err_ref": 0.0543858887257219,
-  "y_err_impl": 0.0543858887257219
+  "y_err_ref": 0.054385888725721906,
+  "y_err_impl": 0.054385888725721906
  },
  {
   "fmt": "MXFP_E3M2",
@@ -1892,8 +1892,8 @@
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "dataset",
-  "y_err_ref": 0.052358473789279374,
-  "y_err_impl": 0.052358473789279374
+  "y_err_ref": 0.05235847378927938,
+  "y_err_impl": 0.05235847378927938
  },
  {
   "fmt": "MXFP_E2M3",
@@ -1928,8 +1928,8 @@
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "dataset",
-  "y_err_ref": 0.03058166218908354,
-  "y_err_impl": 0.03058166218908354
+  "y_err_ref": 0.030581662189083536,
+  "y_err_impl": 0.030581662189083536
  },
  {
   "fmt": "MXFP_E4M1",
@@ -2036,8 +2036,8 @@
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "dataset",
-  "y_err_ref": 0.10175651839968256,
-  "y_err_impl": 0.10175651839968256
+  "y_err_ref": 0.10175651839968254,
+  "y_err_impl": 0.10175651839968254
  },
  {
   "fmt": "MXINT6",
@@ -2072,8 +2072,8 @@
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "dataset",
-  "y_err_ref": 0.03895688950765354,
-  "y_err_impl": 0.03895688950765354
+  "y_err_ref": 0.038956889507653546,
+  "y_err_impl": 0.038956889507653546
  },
  {
   "fmt": "MXINT6_twos",
@@ -2092,12 +2092,12 @@
   "rule": "ceil",
   "n": 10000,
   "mismatches": 0,
-  "signed_zero_diffs": 421,
+  "signed_zero_diffs": 420,
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "dataset",
-  "y_err_ref": 0.04167556409941704,
-  "y_err_impl": 0.04167556409941704
+  "y_err_ref": 0.04148798958684566,
+  "y_err_impl": 0.04148798958684566
  },
  {
   "fmt": "MXINT6_twos",
@@ -2144,8 +2144,8 @@
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "dataset",
-  "y_err_ref": 0.03895688950765354,
-  "y_err_impl": 0.03895688950765354
+  "y_err_ref": 0.038956889507653546,
+  "y_err_impl": 0.038956889507653546
  },
  {
   "fmt": "BFP6",
@@ -2156,8 +2156,8 @@
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "dataset",
-  "y_err_ref": 0.03464004699212888,
-  "y_err_impl": 0.03464004699212888
+  "y_err_ref": 0.03464004699212887,
+  "y_err_impl": 0.03464004699212887
  },
  {
   "fmt": "BFP6",
@@ -2168,8 +2168,8 @@
   "max_abs_diff": 0.0,
   "examples": [],
   "case": "dataset",
-  "y_err_ref": 0.03573670615773365,
-  "y_err_impl": 0.03573670615773365
+  "y_err_ref": 0.03573670615773366,
+  "y_err_impl": 0.03573670615773366
  },
  {
   "fmt": "BFP6",

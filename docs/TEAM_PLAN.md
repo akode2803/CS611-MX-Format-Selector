@@ -15,7 +15,9 @@ The repo already has: `formats.py` (five quantizers, three scale policies, metri
 
 Independently verified on 21 Oct (Aryan's machine, fresh clone): `test_formats.py` 17/17 pass; `validate_predictor.py` reproduces the numbers below (predictor top-1 matches exhaustive on 90/90 synthetic matrices and on W_C).
 
-Current best answer for dataset C (relative error of Y = W·X_cal, %):
+> **Status 24 Oct:** the table below is the 21 Oct v1 state. Current numbers (formats.py v2.2: BFP6 16|4|5, MXINT6 two's complement, literal `ceil`) are in `results/tables/T1_main_C.md`: held-out class rule E2M3 3.101, BFP6 3.484, MXINT6 4.054, E3M2 5.469, E4M1 11.149. Review items 1–2 below are done (v2 BFP6; `selector.sketch_opt` predicts `opt` exactly).
+
+Current best answer for dataset C on 21 Oct (relative error of Y = W·X_cal, %, v1 conventions):
 
 | Format | class rule (`ocp`) | `ceil` | `opt` (per-block exponent search) |
 |---|---|---|---|

@@ -18,8 +18,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.006244583986699581,
-  "fingerprint": "691c4fe9d1af52dd"
+  "seconds": 0.06043066701386124,
+  "fingerprint": "c34d85bacb357c7a"
  },
  {
   "format": "MXFP6_E3M2",
@@ -40,8 +40,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0014534170040860772,
-  "fingerprint": "89f27fa98629bd8c"
+  "seconds": 0.009723458031658083,
+  "fingerprint": "9708beb6e6c5c2f2"
  },
  {
   "format": "MXFP6_E3M2",
@@ -62,8 +62,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.001940083020599559,
-  "fingerprint": "89008a67babc2580"
+  "seconds": 0.026878250006120652,
+  "fingerprint": "851d4e9e78396747"
  },
  {
   "format": "MXFP6_E3M2",
@@ -84,8 +84,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.004841249989112839,
-  "fingerprint": "c7d489050e303d68"
+  "seconds": 0.013084666978102177,
+  "fingerprint": "b796e0e81c28eb7d"
  },
  {
   "format": "MXFP6_E2M3",
@@ -106,8 +106,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0040533329884056,
-  "fingerprint": "0b05c71fc8e7afea"
+  "seconds": 0.0574031249852851,
+  "fingerprint": "f00cdb7ff559e1d2"
  },
  {
   "format": "MXFP6_E2M3",
@@ -128,8 +128,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.021319374995073304,
-  "fingerprint": "9c4a14093ac7417f"
+  "seconds": 0.024986500036902726,
+  "fingerprint": "656af5e604b331d7"
  },
  {
   "format": "MXFP6_E2M3",
@@ -150,8 +150,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.008082500018645078,
-  "fingerprint": "05751cf96be73220"
+  "seconds": 0.0031401659944094718,
+  "fingerprint": "f7fae28ba50a8dc4"
  },
  {
   "format": "MXFP6_E2M3",
@@ -172,8 +172,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.00688574998639524,
-  "fingerprint": "46321858b6a814cb"
+  "seconds": 0.026250541966874152,
+  "fingerprint": "ba44b2d8fd8c423e"
  },
  {
   "format": "MXFP6_E4M1",
@@ -194,8 +194,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0012340829998720437,
-  "fingerprint": "faf3db90c3150ee7"
+  "seconds": 0.02045354194706306,
+  "fingerprint": "d4b7e61743004124"
  },
  {
   "format": "MXFP6_E4M1",
@@ -216,8 +216,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0011976670066360384,
-  "fingerprint": "5e1034266509a40b"
+  "seconds": 0.04072804102906957,
+  "fingerprint": "9cc8b86b8bbdec15"
  },
  {
   "format": "MXFP6_E4M1",
@@ -238,8 +238,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.004360915976576507,
-  "fingerprint": "50e0399902121f1a"
+  "seconds": 0.00959966704249382,
+  "fingerprint": "8dc019f5045b9359"
  },
  {
   "format": "MXFP6_E4M1",
@@ -260,8 +260,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.007402291026664898,
-  "fingerprint": "6a23d1d1fc9b0e4b"
+  "seconds": 0.009915583999827504,
+  "fingerprint": "4c743db74a0dba0e"
  },
  {
   "format": "MXINT6",
@@ -282,30 +282,30 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0014822499942965806,
-  "fingerprint": "420240ed59b8879f"
+  "seconds": 0.016831916000228375,
+  "fingerprint": "a5c7c52003aa7e0e"
  },
  {
   "format": "MXINT6",
   "policy": "ceil",
   "mode": "w",
-  "y_rel_err": 0.041675564259118586,
-  "y_rel_err_heldout": 0.041736066899493,
-  "y_sqnr_db": 27.602370228097467,
-  "w_rel_err": 0.04135631613458204,
-  "w_sqnr_db": 27.669163070272965,
+  "y_rel_err": 0.04148798969810943,
+  "y_rel_err_heldout": 0.041602700150276006,
+  "y_sqnr_db": 27.641552168289106,
+  "w_rel_err": 0.04111719040205455,
+  "w_sqnr_db": 27.71953137956102,
   "y_cos_row_min": 0.9977885311268893,
   "x_rel_err": 0.0,
   "n_range": 0,
   "n_saturated": 0,
-  "n_zeroed": 905,
+  "n_zeroed": 902,
   "n_subnormal": 0,
   "n_scale_clamped": 0,
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0029525000136345625,
-  "fingerprint": "a44bfd06782072ec"
+  "seconds": 0.07882429199526086,
+  "fingerprint": "71eae82a1ad4c829"
  },
  {
   "format": "MXINT6",
@@ -326,8 +326,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.0038461250078398734,
-  "fingerprint": "cdf7ca992481d4a6"
+  "seconds": 0.07368174998555332,
+  "fingerprint": "9bca5ae906eb6eeb"
  },
  {
   "format": "MXINT6",
@@ -348,8 +348,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.005181707994779572,
-  "fingerprint": "1659196abcca2280"
+  "seconds": 0.02166862500598654,
+  "fingerprint": "fc9394df229d5e0e"
  },
  {
   "format": "BFP6",
@@ -370,8 +370,8 @@
   "bits_per_elem": 6.28,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.01128604100085795,
-  "fingerprint": "fc8deb196e6e9fd1"
+  "seconds": 0.014964958012569696,
+  "fingerprint": "b2e050a7bf999c43"
  },
  {
   "format": "BFP6",
@@ -392,8 +392,8 @@
   "bits_per_elem": 6.28,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.001131166995037347,
-  "fingerprint": "77e0336e46f0df9f"
+  "seconds": 0.037257042014971375,
+  "fingerprint": "e84a7512f0335f16"
  },
  {
   "format": "BFP6",
@@ -414,8 +414,8 @@
   "bits_per_elem": 6.28,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.016399707994423807,
-  "fingerprint": "16df1997e2eeb856"
+  "seconds": 0.0426832499797456,
+  "fingerprint": "e131460c0021bb76"
  },
  {
   "format": "BFP6",
@@ -436,8 +436,8 @@
   "bits_per_elem": 6.28,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.004801167000550777,
-  "fingerprint": "96421366dda12880"
+  "seconds": 0.025922541972249746,
+  "fingerprint": "54818c7df438687a"
  },
  {
   "format": "MXFP6_E4M1_v192",
@@ -458,8 +458,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.004046957998070866,
-  "fingerprint": "a63fe94d59701230"
+  "seconds": 0.016059082990977913,
+  "fingerprint": "bb78d207d2534a6e"
  },
  {
   "format": "MXFP6_E4M1_v192",
@@ -480,8 +480,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.003382833005161956,
-  "fingerprint": "0e49dc9488587cbf"
+  "seconds": 0.007672958017792553,
+  "fingerprint": "5960252f12217bb7"
  },
  {
   "format": "MXFP6_E4M1_v192",
@@ -502,8 +502,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.003949667006963864,
-  "fingerprint": "5394a790dd43d578"
+  "seconds": 0.023965500004123896,
+  "fingerprint": "0d7eb84bfbf843ea"
  },
  {
   "format": "MXFP6_E4M1_v192",
@@ -524,8 +524,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.009277832985389978,
-  "fingerprint": "87420cd78ec6414c"
+  "seconds": 0.005988582968711853,
+  "fingerprint": "7d75a33b921ae24b"
  },
  {
   "format": "MXFP6_E4M1_nan1",
@@ -546,8 +546,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0018501250015106052,
-  "fingerprint": "3fe922db320b8bf8"
+  "seconds": 0.001791417016647756,
+  "fingerprint": "e8291ba1469c9973"
  },
  {
   "format": "MXFP6_E4M1_nan1",
@@ -568,8 +568,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0031635409977752715,
-  "fingerprint": "1008235b44ab9bc9"
+  "seconds": 0.004806665994692594,
+  "fingerprint": "f724d1ce9e0d3009"
  },
  {
   "format": "MXFP6_E4M1_nan1",
@@ -590,8 +590,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.010762542020529509,
-  "fingerprint": "5ae1afdae281be00"
+  "seconds": 0.012809749983716756,
+  "fingerprint": "13fc3c949d1b793c"
  },
  {
   "format": "MXFP6_E4M1_nan1",
@@ -612,8 +612,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.004496874986216426,
-  "fingerprint": "f6961754e51f304c"
+  "seconds": 0.03957429202273488,
+  "fingerprint": "63cff2e78cc02b49"
  },
  {
   "format": "BFP6_g32e8",
@@ -634,8 +634,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0012964580091647804,
-  "fingerprint": "f00be4b4724028f0"
+  "seconds": 0.003939708054531366,
+  "fingerprint": "3671b2d7f80bfcdb"
  },
  {
   "format": "BFP6_g32e8",
@@ -656,8 +656,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0011468750017229468,
-  "fingerprint": "bc8bc251c069fead"
+  "seconds": 0.08299041696591303,
+  "fingerprint": "d03c8dab169de438"
  },
  {
   "format": "BFP6_g32e8",
@@ -678,8 +678,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.00499991700053215,
-  "fingerprint": "de761d361ccfcfb4"
+  "seconds": 0.0371697919908911,
+  "fingerprint": "27472335feab2f58"
  },
  {
   "format": "BFP6_g32e8",
@@ -700,8 +700,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.00608349998947233,
-  "fingerprint": "2995a21ae5cd1a1f"
+  "seconds": 0.015962917008437216,
+  "fingerprint": "d3460c5783f09d4c"
  },
  {
   "format": "BFP6_b32_ceil",
@@ -722,8 +722,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0010089999996125698,
-  "fingerprint": "eb631df091630970"
+  "seconds": 0.014630833000410348,
+  "fingerprint": "23039afbbe507b6a"
  },
  {
   "format": "BFP6_b32_ceil",
@@ -744,8 +744,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0008650839736219496,
-  "fingerprint": "42199b641f7f5035"
+  "seconds": 0.016230541979894042,
+  "fingerprint": "aadc2ebbe9baab9e"
  },
  {
   "format": "BFP6_b32_ceil",
@@ -766,8 +766,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.0010544589895289391,
-  "fingerprint": "0e753dbdc2f413f7"
+  "seconds": 0.018224958039354533,
+  "fingerprint": "e231086fa0efe422"
  },
  {
   "format": "BFP6_b32_ceil",
@@ -788,8 +788,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.005124791001435369,
-  "fingerprint": "0a2bae98c95c287b"
+  "seconds": 0.029042833019047976,
+  "fingerprint": "02b52c5ae6ebc863"
  },
  {
   "format": "BFP6_row",
@@ -810,8 +810,8 @@
   "bits_per_elem": 6.08,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0006641249929089099,
-  "fingerprint": "73da67c34f05c815"
+  "seconds": 0.006242915987968445,
+  "fingerprint": "141acb2ff494236b"
  },
  {
   "format": "BFP6_row",
@@ -832,8 +832,8 @@
   "bits_per_elem": 6.08,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0021686670079361647,
-  "fingerprint": "7dc49fef3c341633"
+  "seconds": 0.03721733303973451,
+  "fingerprint": "23c338bc7133a39f"
  },
  {
   "format": "BFP6_row",
@@ -854,8 +854,8 @@
   "bits_per_elem": 6.08,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.0007761670276522636,
-  "fingerprint": "1edfbd0c3c99496d"
+  "seconds": 0.010001584014389664,
+  "fingerprint": "334115678c2e0d56"
  },
  {
   "format": "BFP6_row",
@@ -876,8 +876,8 @@
   "bits_per_elem": 6.08,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.021155666006961837,
-  "fingerprint": "1af86bb85288e003"
+  "seconds": 0.10207670897943899,
+  "fingerprint": "12a53850df6407b8"
  },
  {
   "format": "MXINT6_sym",
@@ -898,8 +898,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.0021497080160770565,
-  "fingerprint": "8eabe652f75706d1"
+  "seconds": 0.03173916699597612,
+  "fingerprint": "6857d08f1e609b66"
  },
  {
   "format": "MXINT6_sym",
@@ -920,8 +920,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 10000,
   "n_macs": 2560000,
-  "seconds": 0.004483000026084483,
-  "fingerprint": "7184b481a4b239bd"
+  "seconds": 0.005547832988668233,
+  "fingerprint": "3b16ed788a3bc9a9"
  },
  {
   "format": "MXINT6_sym",
@@ -942,8 +942,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.0026813749864231795,
-  "fingerprint": "12d10314e9da935a"
+  "seconds": 0.021037333994172513,
+  "fingerprint": "f688a889bfccf84c"
  },
  {
   "format": "MXINT6_sym",
@@ -964,7 +964,7 @@
   "bits_per_elem": 6.32,
   "n_roundings": 40000,
   "n_macs": 2560000,
-  "seconds": 0.004937541991239414,
-  "fingerprint": "ce990ebf79c1ddff"
+  "seconds": 0.007589916989672929,
+  "fingerprint": "a12d061571870875"
  }
 ]

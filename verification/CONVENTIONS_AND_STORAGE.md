@@ -11,7 +11,7 @@ Source tags: [CLASS] Lecture 19 notebook / board notes, [SPEC] OCP MX v1.0, [OUR
 | MX block size | 32. K = 100 → 3 blocks of 32 + a tail of 4 real values. The notebook zero-pads the tail to 32; the quantized values are identical; padding is excluded from all statistics | [CLASS] ✅ |
 | MX shared scale | 2^e, e stored as E8M0, clamped to [−127, 127]; all-zero block: e = 0 | [CLASS] ✅ |
 | Scale rule `ocp` (reported in every table) | e = floor(log2 max\|w\|) − emax_elem; the notebook computes floor(log2) exactly with `frexp`, not `log2` | [CLASS] ✅ |
-| Scale rule `ceil` | smallest e with max\|w\| ≤ vmax·2^e (nothing clipped). Notebook: start from `ocp`, add 1 if max/scale > vmax; identical to ours (checked on all 1,600 blocks of W_C × 4 formats) | [CLASS] ✅ (suggested follow-up) |
+| Scale rule `ceil` | smallest e with max\|w\| ≤ vmax·2^e (nothing clipped). Notebook: start from `ocp`, add 1 if max/scale > vmax; identical to ours (checked on all 1,600 blocks of W_C × 4 formats). Two's-complement MXINT6 (D13, 24 Oct): positive and negative maxima are checked separately, so a negative maximum may use code −32 | [CLASS] ✅ (suggested follow-up); [OUR DECISION D13] |
 | Scale rule `opt` | per block try e_ocp + {−2, −1, 0, +1}, keep lowest squared error; ties: offset closest to 0, then −1, +1, −2 | [OUR DECISION D5] |
 | Element rounding | round to nearest, ties to even; then saturate at ±vmax | [CLASS] ✅ |
 | Special values | none: no Inf/NaN in FP6 / INT6 / BFP6 elements (notebook FP6/FP4 entries use every code; its FP8 entries do reserve codes: E4M3 vmax 448, E5M2 57344) | [CLASS] ✅ for FP6 |
@@ -21,9 +21,9 @@ Source tags: [CLASS] Lecture 19 notebook / board notes, [SPEC] OCP MX v1.0, [OUR
 | MXFP6 E2M3 | 1\|2\|3, bias 1, emin 0, emax 2, vmax 7.5, min subnormal 1/8 | [CLASS] ✅ |
 | MXFP6 E4M1 | 1\|4\|1, bias 7, emin −6, emax 8, vmax 384, min subnormal 2⁻⁷; no reserved code. Not in the notebook. Support: the notebook's 6- and 4-bit formats reserve no code; its E4M3 (same 4-bit exponent, bias 7, emin −6) does reserve one NaN, which is why the one-NaN row (vmax 256) is reported | [OUR DECISION D3] |
 | E4M1 sensitivity rows | top exponent reserved: vmax 192; one NaN (top exp + mantissa 1): vmax 256 | [OUR DECISION D3] |
-| MXINT6 | S I F F F F: value k·2⁻⁴·2^e, k ∈ [−31, 31] (code −32 never produced), emax_elem = 0 | board notes (not in notebook), [OUR DECISION D10] range |
+| MXINT6 | S I F F F F: value k·2⁻⁴·2^e, two's complement k ∈ [−32, 31], emax_elem = 0 (the symmetric [−31, 31] code is the variant `MXINT6_sym`) | board notes (not in notebook), [OUR DECISION D10, revised 23 Oct] range |
 | BFP6 | g\|e\|m = 16\|4\|5: groups of 16 along the row (100 = 6·16 + 4), 4-bit shared exponent clamped to [−8, 7], sign + 5-bit magnitude, value k·2⁻⁴·2^e, k ∈ [−31, 31], e = floor(log2 max\|w\|), RNE | board notes structure (not in notebook), [OUR DECISION D1] parameters |
-| BFP vs MXINT | BFP 32\|8\|5 with the floor rule is numerically identical to MXINT6 (verified on all 10,000 weights of C); our BFP6 differs through group size and exponent width | [OUR DECISION D1], verified |
+| BFP vs MXINT | BFP 32\|8\|5 with the floor rule is numerically identical to `MXINT6_sym` (verified on all 10,000 weights of C); our BFP6 differs through group size and exponent width | [OUR DECISION D1], verified |
 | Quantized operands | W only; X stays FP32. W+X is a secondary experiment (the notebook runs both W-only and W+A, activations blocked along their last axis) | [OUR DECISION D2], consistent with notebook |
 | Error arithmetic | FP64; FP32 accumulation changes relative Y error by ≤ 1.1·10⁻⁷ relative (notebook: FP32 reference with TF32 disabled, error sums in FP64) | [OUR DECISION D8], verified |
 | Primary metric | relative Frobenius error of Y on held-out (odd) columns of X_cal | [OUR DECISION D6] |

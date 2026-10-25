@@ -239,8 +239,17 @@ def shared_exp(block_vals, elem, rule, rounding="rne", lo=-127, hi=127):
         s = floor_log2(amax) - elem.emax_elem
     elif rule == "ceil":
         # team definition (= formats.py): smallest power-of-two scale that clips nothing,
-        # i.e. smallest s with amax <= vmax * 2^s
-        s = ceil_log2(amax / elem.vmax)
+        # i.e. smallest s with amax <= vmax * 2^s. Two's complement with the -2^(n-1) code
+        # (decided 24 Oct, literal reading): a negative value fits down to -(kneg / 2^frac) 2^s.
+        pmax = max((v for v in block_vals if v > 0), default=Fraction(0))
+        nmax = max((-v for v in block_vals if v < 0), default=Fraction(0))
+        if getattr(elem, "full_twos", False) and nmax > 0:
+            vneg = Fraction(elem.kneg, 2 ** elem.frac)
+            s = ceil_log2(nmax / vneg)
+            if pmax > 0:
+                s = max(s, ceil_log2(pmax / elem.vmax))
+        else:
+            s = ceil_log2(amax / elem.vmax)
     elif rule == "ceil_emax":
         # alternative reading of "ceil": ceil(log2 amax) - emax_elem (wastes range; kept for comparison)
         s = ceil_log2(amax) - elem.emax_elem

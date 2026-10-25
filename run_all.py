@@ -218,9 +218,9 @@ def step_tables(a):
 
     # T4 BFP family and ablation (D1)
     rows = []
-    for n, d in [("BFP6", "16|4|5 floor, RNE (candidate)"), ("BFP6_g32e8", "32|8|5 floor, RNE (= MXINT6)"),
+    for n, d in [("BFP6", "16|4|5 floor, RNE (candidate)"), ("BFP6_g32e8", "32|8|5 floor, RNE (= MXINT6_sym)"),
                  ("BFP6_b32_ceil", "32|8|5 ceil, RNE (v1 BFP6)"), ("BFP6_row", "100|8|5 ceil, RNE (one block per row)"),
-                 ("MXINT6", "reference: MXINT6")]:
+                 ("MXINT6_sym", "reference: MXINT6_sym [-31, 31]"), ("MXINT6", "reference: MXINT6 (two's complement, D10)")]:
         rows.append([n, d, format_storage(n, 100, 100)[1]]
                     + [pct(base[n, p]["y_rel_err_heldout"]) for p in ("ocp", "ceil", "opt")])
     for g, eb in ((16, 4), (32, 8)):
@@ -232,8 +232,8 @@ def step_tables(a):
     out.append(write_table(
         "T4_bfp_family", ["format", "definition g|e|m, exponent rule, rounding", "bits/elem",
                           "held-out Y err % (ocp)", "(ceil)", "(opt)"], rows,
-        "BFP family on dataset C. BFP 32|8|5 with the floor rule is numerically identical to MXINT6 "
-        "(test_v2_bfp_32_8_5_identical_to_mxint6). Ablation rows are not candidates: they show that "
+        "BFP family on dataset C. BFP 32|8|5 with the floor rule is numerically identical to the symmetric MXINT6_sym "
+        "(test_v2_bfp_32_8_5_identical_to_mxint6_sym); the candidate MXINT6 also has the two's-complement code -32. Ablation rows are not candidates: they show that "
         "truncation or an always-higher exponent is much worse than floor + RNE."))
 
     # T5 W only vs W+X (D2)
@@ -288,6 +288,14 @@ def step_tables(a):
             "T8_mxint6_sym_vs_tc", ["dataset", "policy", "symmetric [-31,31]", "two's compl. [-32,31]", "difference (pp)"],
             rows_tc, "MXINT6 integer range convention (D10), held-out Y error (%). Datasets A-E: pass --npz."))
         print("  (datasets A-E skipped: pass --npz path/to/assignment_data.npz or put it in data/)")
+        t7 = os.path.join(TABLES, "T7_datasets_A_to_E.md")
+        if os.path.exists(t7):                  # do not leave an old T7 looking current
+            with open(t7) as f:
+                old = f.read()
+            if not old.startswith("> **Not regenerated"):
+                with open(t7, "w") as f:
+                    f.write("> **Not regenerated in the last run_all.py run** (no assignment_data.npz); the numbers "
+                            "below may be stale. Rerun with --npz.\n\n" + old)
     return out
 
 

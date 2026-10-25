@@ -75,6 +75,25 @@ def test_coarse_sketch_converges_to_exact():
     assert err[-1] < 1e-9 and err[0] > err[-1], err
 
 
+def test_sketch_opt_is_exact_for_the_opt_policy():
+    for name, W in corner_matrices():
+        h = rng.uniform(0.01, 5, W.shape[1])
+        so = S.sketch_opt(W, h)
+        for n in S.CANDIDATES:
+            ex = float((((W - quantize(W, n, policy="opt")[0]) ** 2) * h).sum())
+            assert abs(so[n] - ex) <= 1e-9 * max(ex, 1e-300), (name, n, so[n], ex)
+
+
+def test_certified_rows_matches_full_brute_force_when_it_reads_every_row():
+    W = rng.standard_normal((20, 100))
+    X = rng.standard_normal((100, 40))
+    full = S.certified_rows_y(W, X=X, n0=10 ** 6)
+    ex = S.exhaustive(W, X=X)
+    assert S.certified_rows_y.last[0] == 20
+    for n in S.CANDIDATES:
+        assert abs(full[n] - ex[n]) <= 1e-9 * ex[n], n
+
+
 def test_closed_form_matches_rho_on_dataset_C():
     # the worked example: rho = 4.9786 on W_C gives MXINT6 NSR 1.6206e-3 (true 4.025% error)
     path = os.path.join(HERE, "data", "W_C.npy")
@@ -101,8 +120,19 @@ def test_registry_runs_every_approach():
     tree = S.fit_tree(np.array([S.features(rng.standard_normal((16, 64))) for _ in range(30)]),
                       ["MXFP6_E2M3"] * 15 + ["BFP6"] * 15, depth=1, min_leaf=5)
     for name in S.APPROACHES:
-        sc, sec = S.run(name, W, h, **({"tree": tree} if name == "learned_tree" else {}))
+        sc, sec = S.run(name, W, h, X=rng.standard_normal((100, 64)), **({"tree": tree} if name == "learned_tree" else {}))
         assert set(sc) == set(S.CANDIDATES) and sec >= 0, name
+
+
+def test_one_method_and_every_approach_has_a_role():
+    assert [a for a, r in S.ROLE.items() if r == "method"] == [S.METHOD]
+    assert set(S.ROLE) == set(S.APPROACHES) | {"exhaustive_y"}
+    W = rng.standard_normal((32, 100)) * 3
+    X = rng.standard_normal((100, 64))
+    best, sc = S.select_format(W, X)
+    ref = S.exhaustive(W, (X ** 2).sum(1))
+    assert best == min(ref, key=ref.get)
+    assert all(abs(sc[n] - ref[n]) <= 1e-9 * ref[n] for n in ref)
 
 
 def test_suite_is_deterministic():

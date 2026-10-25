@@ -5,9 +5,9 @@
                    magnitudes, see issue #5), wide dynamic range, few-level alphabets, pre-quantized
                    data, column spread, empty rows; X white Gaussian
   random_suite(n)  n random matrices mixing a base distribution, sparsity, random / channel /
-                   block outliers, row and column gains, rescaled by a power of two to max|W| in [8, 16); each gets a random X family:
-                   white, channel gains (log-normal), a few outlier channels, or low rank
-                   (correlated) - the last three are where "way 2" (H-weighting) can matter.
+                   block outliers, row and column gains, rescaled by a power of two to max|W| in [8, 16); each gets a random X family (XKINDS):
+                   white, channel gains, outlier channels, low rank, heavy-tailed tokens, AR(1)
+                   correlated channels, ReLU, massive activations (1% of channels x100), 70% sparse.
 Each generator yields (name, W, X) with X of shape (K, 256): the even columns fit H, the odd
 columns are held out (D6).
 """
@@ -32,7 +32,26 @@ def _x(rng, k, kind):
     if kind == "lowrank":
         r = int(rng.integers(1, 6))
         return rng.standard_normal((k, r)) @ rng.standard_normal((r, NX)) + 0.1 * X
+    if kind == "heavy_t3":                       # heavy-tailed tokens
+        return rng.standard_t(3, (k, NX))
+    if kind == "ar1":                            # neighbouring channels correlated (rho = 0.9)
+        Z = np.empty((k, NX))
+        Z[0] = X[0]
+        for i in range(1, k):
+            Z[i] = 0.9 * Z[i - 1] + np.sqrt(1 - 0.81) * X[i]
+        return Z
+    if kind == "relu":                           # rectified activations: non-negative, non-zero mean
+        return np.maximum(X + 0.3, 0)
+    if kind == "massive":                        # LLM-style massive activations: 1% of channels x100
+        g = np.ones((k, 1))
+        g[rng.choice(k, max(1, k // 100), replace=False)] = 100.0
+        return X * g
+    if kind == "sparse_act":                     # 70% of activations zero
+        return X * (rng.random((k, NX)) > 0.7)
     raise ValueError(kind)
+
+
+XKINDS = ("white", "chan_gain", "outlier_chan", "lowrank", "heavy_t3", "ar1", "relu", "massive", "sparse_act")
 
 
 def find_npz(path=None):
@@ -136,5 +155,5 @@ def random_suite(n=1000, seed=21):
         # power-of-two rescale so max|W| is in [8, 16): MX results are unchanged (scale-equivariant),
         # and BFP6's 4-bit exponent [-8, 7] only clamps for blocks 11+ octaves below the max
         W = W * 2.0 ** (3 - np.floor(np.log2(np.abs(W).max())))
-        xk = rng.choice(["white", "chan_gain", "outlier_chan", "lowrank"])
+        xk = rng.choice(XKINDS)
         yield f"rand{it:04d} {base}/{mode}/X={xk}", W, _x(rng, sh[1], xk)
