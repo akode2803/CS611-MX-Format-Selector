@@ -3,6 +3,6 @@ Dataset C, W and X quantized: ranking per scale policy and the paired bootstrap 
 
 | policy | ranking (best first) | gap winner vs runner-up (pp) | 95% CI low | 95% CI high | verdict |
 |---|---|---|---|---|---|
-| ocp | MXFP6_E2M3 < BFP6 < MXINT6 < MXFP6_E3M2 < MXFP6_E4M1 | 0.314 | 0.225 | 0.401 | MXFP6_E2M3 |
-| ceil | MXFP6_E2M3 < BFP6 < MXINT6 < MXFP6_E3M2 < MXFP6_E4M1 | 0.423 | 0.331 | 0.511 | MXFP6_E2M3 |
-| opt | MXFP6_E2M3 < BFP6 < MXINT6 < MXFP6_E3M2 < MXFP6_E4M1 | 0.274 | 0.182 | 0.362 | MXFP6_E2M3 |
+| ocp | MXFP6_E2M3 < MXINT6 < BFP6 < MXFP6_E3M2 < MXFP6_E4M1 | 0.969 | 0.858 | 1.081 | MXFP6_E2M3 |
+| ceil | MXFP6_E2M3 < MXINT6 < BFP6 < MXFP6_E3M2 < MXFP6_E4M1 | 1.078 | 0.969 | 1.184 | MXFP6_E2M3 |
+| opt | MXFP6_E2M3 < MXINT6 < BFP6 < MXFP6_E3M2 < MXFP6_E4M1 | 0.762 | 0.663 | 0.862 | MXFP6_E2M3 |

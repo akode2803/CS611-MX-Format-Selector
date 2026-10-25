@@ -7,128 +7,128 @@ Selectors vs exhaustive. Truth: held-out Y error (odd X columns) under the class
 
 | approach | role | cost class | top-1 (Y) | mean regret dB | p95 | max | top-1 vs `opt` truth | mean regret vs `opt` | median ms | what it is |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **sketch_h** | **CHOSEN METHOD** | **sketch** | **80.0%** | **0.000** | **0.00** | **0.00** | **80.0%** | **0.000** | **0.51** | **64 bins: exact class-rule diag-H error** |
-| exhaustive_w | reference | brute | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 1.36 | quantize all 5, weight error |
-| exhaustive_h | reference | brute | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 1.40 | quantize all 5, diag-H error |
-| exhaustive_opt | reference | brute | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 3.85 | ANT/MoFQ: brute force with per-block scale search |
-| exhaustive_y | reference | brute | 100.0% | 0.000 | 0.00 | 0.00 | 100.0% | 0.000 | 1.54 | quantize all 5, full Y error on the fit columns |
-| closed_form | ablation | 2 stats | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 0.33 | rho (block peaks) / phi (binades), no flush/clip |
-| closed_form_h | ablation | 2 stats | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 0.32 | same, each weight weighted by H_jj |
-| sketch_nb1_h | ablation | sketch | 60.0% | 0.271 | 1.08 | 1.35 | 60.0% | 0.218 | 0.50 | octave histogram only (1 mantissa bin) |
-| sketch_nb4_h | ablation | sketch | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 0.45 | 4 mantissa bins per octave |
-| sketch_nb16_h | ablation | sketch | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 0.45 | 16 mantissa bins per octave |
-| sketch | ablation | sketch | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 0.54 | 64 bins, weights only |
-| sketch_s10_h | extension | sampled | 40.0% | 0.309 | 1.12 | 1.35 | 40.0% | 0.228 | 0.23 | exact sketch on 10% of blocks |
-| certified_h | extension | sampled | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 6.68 | uniform sample until the winner is 3 s.e. ahead |
-| certified_is_h | extension | sampled | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 1.73 | block maxima + importance sample, 3 s.e. |
-| sketch_opt_h | extension | sketch | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 10.98 | exact prediction of the `opt` policy, diag-H |
-| certified_rows_y | extension | sampled | 100.0% | 0.000 | 0.00 | 0.00 | 100.0% | 0.000 | 2.69 | full-H brute force on a certified row sample |
-| learned_tree | alternative | features | 80.0% | 0.654 | 2.62 | 3.27 | 80.0% | 0.652 | 0.63 | CART on 6 cheap features (sparsity, kurtosis, rho, phi, flush) |
-| hist_pred_h | alternative | sketch | 100.0% | 0.000 | 0.00 | 0.00 | 100.0% | 0.000 | 1.88 | histogram predictor: expected error per bin + exact block max |
-| m1 | alternative | 1 pass | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 1.39 | per-element expected error |
-| m1_h | alternative | 1 pass | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 1.35 | per-element expected error, H-weighted |
-| hybrid_h | alternative | 1 pass | 80.0% | 0.000 | 0.00 | 0.00 | 80.0% | 0.000 | 2.76 | M1 with the top octave rounded exactly |
-| exh_rows10 | alternative | sampled | 60.0% | 0.038 | 0.15 | 0.19 | 60.0% | 0.011 | 0.78 | quantize 10% of rows |
-| ant_rule | alternative | features | 40.0% | 3.555 | 6.80 | 7.05 | 40.0% | 3.194 | 0.15 | ANT-style shape rule: kurtosis -> int / flint / float |
-| fit_gauss | alternative | fit | 80.0% | 0.654 | 2.62 | 3.27 | 80.0% | 0.652 | 1.50 | Gaussian fit + exact error on synthetic draws |
-| fit_laplace | alternative | fit | 80.0% | 0.654 | 2.62 | 3.27 | 80.0% | 0.652 | 1.75 | Laplace fit + exact error on synthetic draws |
-| fit_t | alternative | fit | 80.0% | 0.654 | 2.62 | 3.27 | 80.0% | 0.652 | 1.88 | Student-t fit (df from kurtosis) + exact error |
+| **sketch_h** | **CHOSEN METHOD** | **sketch** | **80.0%** | **0.000** | **0.00** | **0.00** | **60.0%** | **0.001** | **0.72** | **64 bins: exact class-rule diag-H error** |
+| exhaustive_w | reference | brute | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 1.59 | quantize all 5, weight error |
+| exhaustive_h | reference | brute | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 1.67 | quantize all 5, diag-H error |
+| exhaustive_opt | reference | brute | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 4.57 | ANT/MoFQ: brute force with per-block scale search |
+| exhaustive_y | reference | brute | 80.0% | 0.036 | 0.14 | 0.18 | 100.0% | 0.000 | 2.56 | quantize all 5, full Y error on the fit columns |
+| closed_form | ablation | 2 stats | 60.0% | 0.036 | 0.14 | 0.18 | 80.0% | 0.000 | 0.46 | rho (block peaks) / phi (binades), no flush/clip |
+| closed_form_h | ablation | 2 stats | 60.0% | 0.036 | 0.14 | 0.18 | 80.0% | 0.000 | 0.48 | same, each weight weighted by H_jj |
+| sketch_nb1_h | ablation | sketch | 60.0% | 0.036 | 0.14 | 0.18 | 80.0% | 0.000 | 0.73 | octave histogram only (1 mantissa bin) |
+| sketch_nb4_h | ablation | sketch | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 0.70 | 4 mantissa bins per octave |
+| sketch_nb16_h | ablation | sketch | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 0.65 | 16 mantissa bins per octave |
+| sketch | ablation | sketch | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 0.67 | 64 bins, weights only |
+| sketch_s10_h | extension | sampled | 60.0% | 0.036 | 0.14 | 0.18 | 80.0% | 0.000 | 0.30 | exact sketch on 10% of blocks |
+| certified_h | extension | sampled | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 1.33 | uniform sample until the winner is 3 s.e. ahead |
+| certified_is_h | extension | sampled | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 0.66 | block maxima + importance sample, 3 s.e. |
+| sketch_opt_h | extension | sketch | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 14.58 | exact prediction of the `opt` policy, diag-H |
+| certified_rows_y | extension | sampled | 80.0% | 0.036 | 0.14 | 0.18 | 100.0% | 0.000 | 3.38 | full-H brute force on a certified row sample |
+| learned_tree | alternative | features | 60.0% | 0.690 | 2.65 | 3.27 | 80.0% | 0.652 | 1.26 | CART on 6 cheap features (sparsity, kurtosis, rho, phi, flush) |
+| hist_pred_h | alternative | sketch | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 2.21 | histogram predictor: expected error per bin + exact block max |
+| m1 | alternative | 1 pass | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 1.89 | per-element expected error |
+| m1_h | alternative | 1 pass | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 1.77 | per-element expected error, H-weighted |
+| hybrid_h | alternative | 1 pass | 80.0% | 0.000 | 0.00 | 0.00 | 60.0% | 0.001 | 3.27 | M1 with the top octave rounded exactly |
+| exh_rows10 | alternative | sampled | 60.0% | 0.036 | 0.14 | 0.18 | 80.0% | 0.000 | 0.88 | quantize 10% of rows |
+| ant_rule | alternative | features | 40.0% | 3.320 | 5.86 | 5.87 | 40.0% | 2.977 | 0.19 | ANT-style shape rule: kurtosis -> int / flint / float |
+| fit_gauss | alternative | fit | 80.0% | 0.654 | 2.62 | 3.27 | 60.0% | 0.653 | 1.87 | Gaussian fit + exact error on synthetic draws |
+| fit_laplace | alternative | fit | 60.0% | 0.690 | 2.65 | 3.27 | 80.0% | 0.652 | 2.07 | Laplace fit + exact error on synthetic draws |
+| fit_t | alternative | fit | 60.0% | 0.690 | 2.65 | 3.27 | 80.0% | 0.652 | 2.37 | Student-t fit (df from kurtosis) + exact error |
 
 ### adversarial (28 matrices)
 
 | approach | role | cost class | top-1 (Y) | mean regret dB | p95 | max | top-1 vs `opt` truth | mean regret vs `opt` | median ms | what it is |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **sketch_h** | **CHOSEN METHOD** | **sketch** | **96.4%** | **0.003** | **0.00** | **0.08** | **92.9%** | **0.010** | **0.78** | **64 bins: exact class-rule diag-H error** |
-| exhaustive_w | reference | brute | 96.4% | 0.003 | 0.00 | 0.08 | 92.9% | 0.010 | 1.77 | quantize all 5, weight error |
-| exhaustive_h | reference | brute | 96.4% | 0.003 | 0.00 | 0.08 | 92.9% | 0.010 | 1.86 | quantize all 5, diag-H error |
-| exhaustive_opt | reference | brute | 92.9% | 0.004 | 0.03 | 0.08 | 96.4% | 0.003 | 5.23 | ANT/MoFQ: brute force with per-block scale search |
-| exhaustive_y | reference | brute | 100.0% | 0.000 | 0.00 | 0.00 | 96.4% | 0.007 | 7.42 | quantize all 5, full Y error on the fit columns |
-| closed_form | ablation | 2 stats | 75.0% | 2.092 | 18.89 | 29.23 | 78.6% | 2.080 | 0.42 | rho (block peaks) / phi (binades), no flush/clip |
-| closed_form_h | ablation | 2 stats | 75.0% | 2.092 | 18.89 | 29.23 | 78.6% | 2.080 | 0.42 | same, each weight weighted by H_jj |
-| sketch_nb1_h | ablation | sketch | 78.6% | 0.055 | 0.32 | 0.99 | 82.1% | 0.038 | 0.79 | octave histogram only (1 mantissa bin) |
-| sketch_nb4_h | ablation | sketch | 89.3% | 0.003 | 0.00 | 0.08 | 85.7% | 0.010 | 0.72 | 4 mantissa bins per octave |
-| sketch_nb16_h | ablation | sketch | 92.9% | 0.003 | 0.00 | 0.08 | 89.3% | 0.010 | 0.70 | 16 mantissa bins per octave |
-| sketch | ablation | sketch | 96.4% | 0.003 | 0.00 | 0.08 | 92.9% | 0.010 | 0.82 | 64 bins, weights only |
-| sketch_s10_h | extension | sampled | 89.3% | 0.137 | 0.10 | 3.68 | 92.9% | 0.044 | 0.27 | exact sketch on 10% of blocks |
-| certified_h | extension | sampled | 96.4% | 0.003 | 0.00 | 0.08 | 92.9% | 0.010 | 4.78 | uniform sample until the winner is 3 s.e. ahead |
-| certified_is_h | extension | sampled | 96.4% | 0.003 | 0.00 | 0.08 | 92.9% | 0.010 | 3.58 | block maxima + importance sample, 3 s.e. |
-| sketch_opt_h | extension | sketch | 92.9% | 0.004 | 0.03 | 0.08 | 96.4% | 0.003 | 22.73 | exact prediction of the `opt` policy, diag-H |
-| certified_rows_y | extension | sampled | 96.4% | 0.001 | 0.00 | 0.04 | 100.0% | 0.000 | 8.85 | full-H brute force on a certified row sample |
-| learned_tree | alternative | features | 50.0% | 2.727 | 18.18 | 28.81 | 53.6% | 2.642 | 0.84 | CART on 6 cheap features (sparsity, kurtosis, rho, phi, flush) |
-| hist_pred_h | alternative | sketch | 60.7% | 2.896 | 26.29 | 28.81 | 57.1% | 2.912 | 2.79 | histogram predictor: expected error per bin + exact block max |
-| m1 | alternative | 1 pass | 89.3% | 0.003 | 0.00 | 0.08 | 85.7% | 0.010 | 1.80 | per-element expected error |
-| m1_h | alternative | 1 pass | 89.3% | 0.003 | 0.00 | 0.08 | 85.7% | 0.010 | 1.80 | per-element expected error, H-weighted |
-| hybrid_h | alternative | 1 pass | 96.4% | 0.003 | 0.00 | 0.08 | 92.9% | 0.010 | 3.39 | M1 with the top octave rounded exactly |
-| exh_rows10 | alternative | sampled | 78.6% | 0.198 | 0.97 | 3.68 | 75.0% | 0.099 | 0.85 | quantize 10% of rows |
-| ant_rule | alternative | features | 21.4% | 2.246 | 5.93 | 6.19 | 21.4% | 1.885 | 0.23 | ANT-style shape rule: kurtosis -> int / flint / float |
-| fit_gauss | alternative | fit | 50.0% | 0.526 | 3.15 | 4.69 | 53.6% | 0.460 | 2.61 | Gaussian fit + exact error on synthetic draws |
-| fit_laplace | alternative | fit | 67.9% | 0.739 | 4.46 | 7.88 | 71.4% | 0.667 | 2.56 | Laplace fit + exact error on synthetic draws |
-| fit_t | alternative | fit | 71.4% | 0.626 | 4.46 | 7.88 | 75.0% | 0.568 | 2.97 | Student-t fit (df from kurtosis) + exact error |
+| **sketch_h** | **CHOSEN METHOD** | **sketch** | **100.0%** | **0.000** | **0.00** | **0.00** | **96.4%** | **0.036** | **1.15** | **64 bins: exact class-rule diag-H error** |
+| exhaustive_w | reference | brute | 100.0% | 0.000 | 0.00 | 0.00 | 96.4% | 0.036 | 2.03 | quantize all 5, weight error |
+| exhaustive_h | reference | brute | 100.0% | 0.000 | 0.00 | 0.00 | 96.4% | 0.036 | 2.05 | quantize all 5, diag-H error |
+| exhaustive_opt | reference | brute | 96.4% | 0.004 | 0.00 | 0.10 | 100.0% | 0.000 | 7.93 | ANT/MoFQ: brute force with per-block scale search |
+| exhaustive_y | reference | brute | 100.0% | 0.000 | 0.00 | 0.00 | 96.4% | 0.036 | 20.00 | quantize all 5, full Y error on the fit columns |
+| closed_form | ablation | 2 stats | 89.3% | 1.044 | 0.00 | 29.23 | 85.7% | 1.083 | 0.56 | rho (block peaks) / phi (binades), no flush/clip |
+| closed_form_h | ablation | 2 stats | 89.3% | 1.044 | 0.00 | 29.23 | 85.7% | 1.083 | 0.55 | same, each weight weighted by H_jj |
+| sketch_nb1_h | ablation | sketch | 85.7% | 0.126 | 0.87 | 2.20 | 82.1% | 0.142 | 1.01 | octave histogram only (1 mantissa bin) |
+| sketch_nb4_h | ablation | sketch | 89.3% | 0.004 | 0.00 | 0.10 | 92.9% | 0.000 | 0.98 | 4 mantissa bins per octave |
+| sketch_nb16_h | ablation | sketch | 96.4% | 0.000 | 0.00 | 0.00 | 92.9% | 0.036 | 1.10 | 16 mantissa bins per octave |
+| sketch | ablation | sketch | 100.0% | 0.000 | 0.00 | 0.00 | 96.4% | 0.036 | 1.26 | 64 bins, weights only |
+| sketch_s10_h | extension | sampled | 89.3% | 0.141 | 0.15 | 3.68 | 92.9% | 0.059 | 0.41 | exact sketch on 10% of blocks |
+| certified_h | extension | sampled | 100.0% | 0.000 | 0.00 | 0.00 | 96.4% | 0.036 | 6.89 | uniform sample until the winner is 3 s.e. ahead |
+| certified_is_h | extension | sampled | 100.0% | 0.000 | 0.00 | 0.00 | 96.4% | 0.036 | 2.29 | block maxima + importance sample, 3 s.e. |
+| sketch_opt_h | extension | sketch | 96.4% | 0.004 | 0.00 | 0.10 | 100.0% | 0.000 | 23.35 | exact prediction of the `opt` policy, diag-H |
+| certified_rows_y | extension | sampled | 100.0% | 0.000 | 0.00 | 0.00 | 96.4% | 0.036 | 8.34 | full-H brute force on a certified row sample |
+| learned_tree | alternative | features | 75.0% | 0.779 | 4.46 | 7.88 | 71.4% | 0.747 | 1.17 | CART on 6 cheap features (sparsity, kurtosis, rho, phi, flush) |
+| hist_pred_h | alternative | sketch | 89.3% | 0.004 | 0.00 | 0.10 | 92.9% | 0.000 | 3.67 | histogram predictor: expected error per bin + exact block max |
+| m1 | alternative | 1 pass | 89.3% | 0.004 | 0.00 | 0.10 | 92.9% | 0.000 | 3.23 | per-element expected error |
+| m1_h | alternative | 1 pass | 89.3% | 0.004 | 0.00 | 0.10 | 92.9% | 0.000 | 2.49 | per-element expected error, H-weighted |
+| hybrid_h | alternative | 1 pass | 100.0% | 0.000 | 0.00 | 0.00 | 96.4% | 0.036 | 4.40 | M1 with the top octave rounded exactly |
+| exh_rows10 | alternative | sampled | 85.7% | 0.189 | 0.93 | 3.68 | 89.3% | 0.098 | 0.97 | quantize 10% of rows |
+| ant_rule | alternative | features | 21.4% | 2.129 | 5.79 | 5.94 | 21.4% | 1.808 | 0.29 | ANT-style shape rule: kurtosis -> int / flint / float |
+| fit_gauss | alternative | fit | 82.1% | 0.671 | 4.46 | 7.88 | 78.6% | 0.652 | 3.06 | Gaussian fit + exact error on synthetic draws |
+| fit_laplace | alternative | fit | 82.1% | 0.671 | 4.46 | 7.88 | 78.6% | 0.652 | 3.07 | Laplace fit + exact error on synthetic draws |
+| fit_t | alternative | fit | 82.1% | 0.671 | 4.46 | 7.88 | 78.6% | 0.652 | 3.57 | Student-t fit (df from kurtosis) + exact error |
 
 ### random (1000 matrices)
 
 | approach | role | cost class | top-1 (Y) | mean regret dB | p95 | max | top-1 vs `opt` truth | mean regret vs `opt` | median ms | what it is |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **sketch_h** | **CHOSEN METHOD** | **sketch** | **93.3%** | **0.031** | **0.06** | **3.76** | **89.4%** | **0.059** | **0.77** | **64 bins: exact class-rule diag-H error** |
-| exhaustive_w | reference | brute | 82.3% | 0.475 | 3.27 | 20.75 | 80.2% | 0.520 | 1.77 | quantize all 5, weight error |
-| exhaustive_h | reference | brute | 93.3% | 0.031 | 0.06 | 3.76 | 89.4% | 0.059 | 1.81 | quantize all 5, diag-H error |
-| exhaustive_opt | reference | brute | 81.2% | 0.503 | 3.59 | 20.75 | 80.6% | 0.527 | 7.31 | ANT/MoFQ: brute force with per-block scale search |
-| exhaustive_y | reference | brute | 96.2% | 0.010 | 0.00 | 1.74 | 91.6% | 0.040 | 6.39 | quantize all 5, full Y error on the fit columns |
-| closed_form | ablation | 2 stats | 40.9% | 2.297 | 8.76 | 20.75 | 40.3% | 2.238 | 0.45 | rho (block peaks) / phi (binades), no flush/clip |
-| closed_form_h | ablation | 2 stats | 42.2% | 2.215 | 8.58 | 20.74 | 41.7% | 2.161 | 0.45 | same, each weight weighted by H_jj |
-| sketch_nb1_h | ablation | sketch | 80.8% | 0.201 | 1.33 | 7.85 | 80.7% | 0.196 | 0.76 | octave histogram only (1 mantissa bin) |
-| sketch_nb4_h | ablation | sketch | 87.1% | 0.084 | 0.47 | 4.32 | 84.5% | 0.107 | 0.73 | 4 mantissa bins per octave |
-| sketch_nb16_h | ablation | sketch | 91.8% | 0.047 | 0.19 | 5.03 | 88.1% | 0.074 | 0.71 | 16 mantissa bins per octave |
-| sketch | ablation | sketch | 82.3% | 0.475 | 3.27 | 20.75 | 80.2% | 0.520 | 0.79 | 64 bins, weights only |
-| sketch_s10_h | extension | sampled | 71.2% | 0.759 | 4.60 | 20.75 | 71.3% | 0.719 | 0.27 | exact sketch on 10% of blocks |
-| certified_h | extension | sampled | 92.7% | 0.040 | 0.11 | 3.76 | 89.0% | 0.066 | 9.26 | uniform sample until the winner is 3 s.e. ahead |
-| certified_is_h | extension | sampled | 92.5% | 0.043 | 0.12 | 4.32 | 89.4% | 0.067 | 2.28 | block maxima + importance sample, 3 s.e. |
-| sketch_opt_h | extension | sketch | 89.5% | 0.089 | 0.37 | 7.14 | 92.8% | 0.036 | 19.43 | exact prediction of the `opt` policy, diag-H |
-| certified_rows_y | extension | sampled | 95.6% | 0.017 | 0.00 | 4.97 | 91.8% | 0.044 | 9.60 | full-H brute force on a certified row sample |
-| learned_tree | alternative | features | 73.4% | 0.680 | 4.45 | 20.75 | 72.8% | 0.707 | 0.85 | CART on 6 cheap features (sparsity, kurtosis, rho, phi, flush) |
-| hist_pred_h | alternative | sketch | 89.3% | 0.062 | 0.36 | 5.36 | 87.9% | 0.080 | 2.87 | histogram predictor: expected error per bin + exact block max |
-| m1 | alternative | 1 pass | 80.6% | 0.514 | 3.66 | 20.75 | 79.0% | 0.555 | 1.81 | per-element expected error |
-| m1_h | alternative | 1 pass | 88.4% | 0.078 | 0.45 | 4.90 | 85.6% | 0.105 | 1.73 | per-element expected error, H-weighted |
-| hybrid_h | alternative | 1 pass | 90.6% | 0.054 | 0.25 | 3.76 | 87.6% | 0.079 | 3.56 | M1 with the top octave rounded exactly |
-| exh_rows10 | alternative | sampled | 70.1% | 0.838 | 5.60 | 20.75 | 70.4% | 0.837 | 0.86 | quantize 10% of rows |
-| ant_rule | alternative | features | 5.9% | 7.250 | 13.77 | 25.73 | 7.6% | 6.512 | 0.22 | ANT-style shape rule: kurtosis -> int / flint / float |
-| fit_gauss | alternative | fit | 61.8% | 1.136 | 6.54 | 20.75 | 61.4% | 1.147 | 2.31 | Gaussian fit + exact error on synthetic draws |
-| fit_laplace | alternative | fit | 53.7% | 1.781 | 8.44 | 20.75 | 53.2% | 1.767 | 2.77 | Laplace fit + exact error on synthetic draws |
-| fit_t | alternative | fit | 53.7% | 1.781 | 8.44 | 20.75 | 53.2% | 1.767 | 3.05 | Student-t fit (df from kurtosis) + exact error |
+| **sketch_h** | **CHOSEN METHOD** | **sketch** | **87.7%** | **0.040** | **0.04** | **3.76** | **82.5%** | **0.085** | **0.93** | **64 bins: exact class-rule diag-H error** |
+| exhaustive_w | reference | brute | 75.0% | 0.624 | 4.85 | 20.74 | 70.5% | 0.698 | 2.05 | quantize all 5, weight error |
+| exhaustive_h | reference | brute | 87.7% | 0.040 | 0.04 | 3.76 | 82.5% | 0.085 | 2.08 | quantize all 5, diag-H error |
+| exhaustive_opt | reference | brute | 73.6% | 0.644 | 4.67 | 20.74 | 71.0% | 0.668 | 7.90 | ANT/MoFQ: brute force with per-block scale search |
+| exhaustive_y | reference | brute | 91.3% | 0.015 | 0.00 | 2.67 | 80.2% | 0.067 | 6.12 | quantize all 5, full Y error on the fit columns |
+| closed_form | ablation | 2 stats | 48.9% | 1.766 | 7.06 | 20.75 | 48.9% | 1.717 | 0.54 | rho (block peaks) / phi (binades), no flush/clip |
+| closed_form_h | ablation | 2 stats | 49.8% | 1.684 | 6.96 | 20.74 | 49.8% | 1.630 | 0.53 | same, each weight weighted by H_jj |
+| sketch_nb1_h | ablation | sketch | 75.5% | 0.293 | 2.10 | 6.75 | 71.3% | 0.276 | 0.91 | octave histogram only (1 mantissa bin) |
+| sketch_nb4_h | ablation | sketch | 79.9% | 0.134 | 0.97 | 5.58 | 76.1% | 0.160 | 0.86 | 4 mantissa bins per octave |
+| sketch_nb16_h | ablation | sketch | 82.4% | 0.062 | 0.28 | 3.76 | 78.6% | 0.107 | 0.85 | 16 mantissa bins per octave |
+| sketch | ablation | sketch | 75.0% | 0.624 | 4.85 | 20.74 | 70.5% | 0.698 | 0.91 | 64 bins, weights only |
+| sketch_s10_h | extension | sampled | 67.7% | 0.854 | 5.40 | 20.75 | 65.8% | 0.799 | 0.32 | exact sketch on 10% of blocks |
+| certified_h | extension | sampled | 86.9% | 0.068 | 0.17 | 10.24 | 81.9% | 0.113 | 10.99 | uniform sample until the winner is 3 s.e. ahead |
+| certified_is_h | extension | sampled | 87.1% | 0.057 | 0.14 | 6.52 | 81.9% | 0.093 | 4.87 | block maxima + importance sample, 3 s.e. |
+| sketch_opt_h | extension | sketch | 83.6% | 0.113 | 0.72 | 6.21 | 85.3% | 0.042 | 21.88 | exact prediction of the `opt` policy, diag-H |
+| certified_rows_y | extension | sampled | 91.0% | 0.016 | 0.00 | 2.67 | 79.9% | 0.069 | 12.78 | full-H brute force on a certified row sample |
+| learned_tree | alternative | features | 57.7% | 1.295 | 6.62 | 20.75 | 56.0% | 1.317 | 1.02 | CART on 6 cheap features (sparsity, kurtosis, rho, phi, flush) |
+| hist_pred_h | alternative | sketch | 85.5% | 0.058 | 0.29 | 3.76 | 80.4% | 0.106 | 3.28 | histogram predictor: expected error per bin + exact block max |
+| m1 | alternative | 1 pass | 67.1% | 0.679 | 4.88 | 20.75 | 63.9% | 0.759 | 2.55 | per-element expected error |
+| m1_h | alternative | 1 pass | 76.5% | 0.123 | 0.94 | 4.50 | 73.0% | 0.175 | 2.16 | per-element expected error, H-weighted |
+| hybrid_h | alternative | 1 pass | 85.8% | 0.053 | 0.27 | 3.76 | 80.8% | 0.100 | 4.34 | M1 with the top octave rounded exactly |
+| exh_rows10 | alternative | sampled | 65.4% | 0.973 | 6.47 | 20.75 | 62.2% | 0.975 | 0.92 | quantize 10% of rows |
+| ant_rule | alternative | features | 9.4% | 6.191 | 12.75 | 23.75 | 10.9% | 5.491 | 0.26 | ANT-style shape rule: kurtosis -> int / flint / float |
+| fit_gauss | alternative | fit | 50.8% | 1.444 | 6.88 | 20.75 | 50.3% | 1.462 | 2.75 | Gaussian fit + exact error on synthetic draws |
+| fit_laplace | alternative | fit | 52.5% | 1.541 | 6.88 | 20.75 | 52.2% | 1.529 | 3.24 | Laplace fit + exact error on synthetic draws |
+| fit_t | alternative | fit | 52.5% | 1.541 | 6.88 | 20.75 | 52.2% | 1.529 | 3.70 | Student-t fit (df from kurtosis) + exact error |
 
 Random suite by X family (top-1 vs held-out Y truth / mean regret dB):
 
 | approach | white | chan_gain | outlier_chan | lowrank | heavy_t3 | ar1 | relu | massive | sparse_act |
 |---|---|---|---|---|---|---|---|---|---|
-| sketch_h | 98.1% / 0.004 | 95.7% / 0.006 | 95.5% / 0.020 | 83.7% / 0.131 | 94.1% / 0.021 | 90.7% / 0.062 | 87.5% / 0.035 | 96.9% / 0.001 | 96.5% / 0.008 |
-| exhaustive_w | 98.1% / 0.004 | 75.0% / 0.499 | 63.1% / 1.054 | 80.8% / 0.192 | 94.1% / 0.006 | 90.7% / 0.089 | 88.4% / 0.033 | 58.3% / 2.085 | 97.4% / 0.007 |
-| exhaustive_h | 98.1% / 0.004 | 95.7% / 0.006 | 95.5% / 0.020 | 83.7% / 0.131 | 94.1% / 0.021 | 90.7% / 0.062 | 87.5% / 0.035 | 96.9% / 0.001 | 96.5% / 0.008 |
-| exhaustive_opt | 97.2% / 0.017 | 77.6% / 0.477 | 59.5% / 1.129 | 80.8% / 0.199 | 90.2% / 0.091 | 90.7% / 0.084 | 86.6% / 0.048 | 57.5% / 2.144 | 95.7% / 0.034 |
-| exhaustive_y | 96.2% / 0.010 | 97.4% / 0.001 | 95.5% / 0.007 | 98.1% / 0.006 | 93.1% / 0.021 | 96.3% / 0.017 | 95.5% / 0.006 | 97.6% / 0.001 | 95.7% / 0.020 |
-| closed_form | 45.3% / 1.332 | 44.8% / 1.936 | 35.1% / 2.508 | 45.2% / 1.803 | 48.0% / 1.582 | 37.4% / 2.282 | 33.9% / 2.649 | 32.3% / 4.441 | 47.8% / 1.727 |
-| closed_form_h | 46.2% / 1.311 | 46.6% / 1.888 | 38.7% / 2.375 | 45.2% / 1.805 | 47.1% / 1.643 | 37.4% / 2.282 | 33.9% / 2.649 | 38.6% / 3.928 | 47.0% / 1.730 |
-| sketch_nb1_h | 80.2% / 0.194 | 83.6% / 0.129 | 78.4% / 0.230 | 79.8% / 0.258 | 77.5% / 0.216 | 73.8% / 0.355 | 79.5% / 0.115 | 84.3% / 0.190 | 88.7% / 0.144 |
-| sketch_nb4_h | 94.3% / 0.034 | 86.2% / 0.048 | 82.9% / 0.108 | 80.8% / 0.216 | 86.3% / 0.089 | 87.9% / 0.050 | 84.8% / 0.052 | 89.8% / 0.107 | 90.4% / 0.053 |
-| sketch_nb16_h | 98.1% / 0.004 | 95.7% / 0.019 | 94.6% / 0.023 | 81.7% / 0.155 | 92.2% / 0.074 | 88.8% / 0.055 | 88.4% / 0.034 | 95.3% / 0.012 | 90.4% / 0.064 |
-| sketch | 98.1% / 0.004 | 75.0% / 0.499 | 63.1% / 1.054 | 80.8% / 0.192 | 94.1% / 0.006 | 90.7% / 0.089 | 88.4% / 0.033 | 58.3% / 2.085 | 97.4% / 0.007 |
-| sketch_s10_h | 84.0% / 0.507 | 70.7% / 0.609 | 61.3% / 1.227 | 64.4% / 0.696 | 73.5% / 0.653 | 72.9% / 0.581 | 72.3% / 0.508 | 66.9% / 1.443 | 75.7% / 0.497 |
-| certified_h | 96.2% / 0.042 | 95.7% / 0.006 | 95.5% / 0.020 | 82.7% / 0.139 | 92.2% / 0.057 | 89.7% / 0.065 | 87.5% / 0.035 | 96.9% / 0.001 | 96.5% / 0.008 |
-| certified_is_h | 98.1% / 0.004 | 94.8% / 0.008 | 91.9% / 0.123 | 83.7% / 0.131 | 93.1% / 0.022 | 90.7% / 0.062 | 85.7% / 0.043 | 96.9% / 0.001 | 96.5% / 0.008 |
-| sketch_opt_h | 95.3% / 0.034 | 86.2% / 0.078 | 88.3% / 0.133 | 81.7% / 0.169 | 89.2% / 0.175 | 90.7% / 0.057 | 86.6% / 0.038 | 91.3% / 0.100 | 95.7% / 0.029 |
-| certified_rows_y | 96.2% / 0.010 | 95.7% / 0.009 | 94.6% / 0.052 | 97.1% / 0.007 | 94.1% / 0.021 | 95.3% / 0.020 | 95.5% / 0.006 | 96.9% / 0.005 | 94.8% / 0.021 |
-| learned_tree | 87.7% / 0.121 | 68.1% / 0.641 | 60.4% / 1.169 | 69.2% / 0.573 | 78.4% / 0.180 | 84.1% / 0.106 | 75.0% / 0.419 | 57.5% / 2.305 | 83.5% / 0.295 |
-| hist_pred_h | 97.2% / 0.004 | 90.5% / 0.037 | 84.7% / 0.082 | 82.7% / 0.159 | 92.2% / 0.043 | 89.7% / 0.092 | 83.9% / 0.046 | 87.4% / 0.077 | 95.7% / 0.019 |
-| m1 | 96.2% / 0.016 | 74.1% / 0.504 | 59.5% / 1.122 | 79.8% / 0.219 | 90.2% / 0.022 | 88.8% / 0.074 | 89.3% / 0.031 | 57.5% / 2.287 | 94.8% / 0.023 |
-| m1_h | 96.2% / 0.016 | 89.7% / 0.054 | 80.2% / 0.173 | 80.8% / 0.199 | 89.2% / 0.041 | 88.8% / 0.074 | 87.5% / 0.058 | 89.0% / 0.060 | 93.9% / 0.031 |
-| hybrid_h | 97.2% / 0.004 | 91.4% / 0.033 | 88.3% / 0.069 | 82.7% / 0.159 | 94.1% / 0.021 | 90.7% / 0.062 | 86.6% / 0.037 | 88.2% / 0.079 | 96.5% / 0.018 |
-| exh_rows10 | 77.4% / 0.286 | 63.8% / 0.846 | 60.4% / 1.244 | 69.2% / 0.766 | 77.5% / 0.565 | 72.0% / 0.467 | 76.8% / 0.284 | 57.5% / 2.475 | 79.1% / 0.330 |
-| ant_rule | 0.0% / 7.707 | 8.6% / 6.848 | 17.1% / 5.421 | 1.0% / 7.119 | 1.0% / 8.194 | 0.0% / 8.199 | 0.0% / 8.489 | 22.0% / 5.624 | 0.0% / 7.985 |
-| fit_gauss | 77.4% / 0.420 | 56.0% / 1.331 | 48.6% / 1.625 | 62.5% / 0.741 | 68.6% / 0.508 | 71.0% / 0.709 | 59.8% / 0.762 | 47.2% / 3.089 | 68.7% / 0.644 |
-| fit_laplace | 62.3% / 1.053 | 50.0% / 1.637 | 46.8% / 2.002 | 56.7% / 1.255 | 60.8% / 1.262 | 54.2% / 1.562 | 50.9% / 1.925 | 39.4% / 3.903 | 65.2% / 1.037 |
-| fit_t | 62.3% / 1.053 | 50.0% / 1.637 | 46.8% / 2.002 | 56.7% / 1.255 | 60.8% / 1.262 | 54.2% / 1.562 | 50.9% / 1.925 | 39.4% / 3.903 | 65.2% / 1.037 |
+| sketch_h | 89.6% / 0.016 | 92.2% / 0.006 | 91.9% / 0.006 | 76.9% / 0.128 | 88.2% / 0.089 | 78.5% / 0.097 | 76.8% / 0.025 | 97.6% / 0.003 | 94.8% / 0.006 |
+| exhaustive_w | 91.5% / 0.009 | 69.8% / 0.695 | 58.6% / 1.468 | 75.0% / 0.186 | 90.2% / 0.029 | 77.6% / 0.112 | 76.8% / 0.025 | 47.2% / 2.689 | 93.9% / 0.009 |
+| exhaustive_h | 89.6% / 0.016 | 92.2% / 0.006 | 91.9% / 0.006 | 76.9% / 0.128 | 88.2% / 0.089 | 78.5% / 0.097 | 76.8% / 0.025 | 97.6% / 0.003 | 94.8% / 0.006 |
+| exhaustive_opt | 89.6% / 0.016 | 70.7% / 0.578 | 57.7% / 1.462 | 76.0% / 0.189 | 87.3% / 0.124 | 73.8% / 0.216 | 74.1% / 0.089 | 46.5% / 2.699 | 92.2% / 0.045 |
+| exhaustive_y | 86.8% / 0.010 | 87.9% / 0.008 | 91.0% / 0.005 | 99.0% / 0.000 | 84.3% / 0.090 | 88.8% / 0.008 | 92.9% / 0.012 | 96.9% / 0.001 | 93.0% / 0.006 |
+| closed_form | 62.3% / 1.098 | 49.1% / 1.381 | 39.6% / 1.807 | 51.9% / 1.573 | 58.8% / 1.570 | 44.9% / 1.884 | 43.8% / 1.942 | 33.9% / 3.084 | 59.1% / 1.341 |
+| closed_form_h | 66.0% / 0.934 | 50.9% / 1.276 | 39.6% / 1.750 | 52.9% / 1.521 | 55.9% / 1.548 | 44.9% / 1.832 | 43.8% / 1.975 | 39.4% / 2.735 | 57.4% / 1.411 |
+| sketch_nb1_h | 82.1% / 0.161 | 75.9% / 0.300 | 73.9% / 0.331 | 69.2% / 0.343 | 77.5% / 0.291 | 70.1% / 0.392 | 68.8% / 0.310 | 82.7% / 0.236 | 78.3% / 0.278 |
+| sketch_nb4_h | 85.8% / 0.042 | 81.9% / 0.097 | 82.0% / 0.065 | 71.2% / 0.296 | 82.4% / 0.177 | 75.7% / 0.118 | 75.9% / 0.047 | 84.3% / 0.140 | 79.1% / 0.232 |
+| sketch_nb16_h | 87.7% / 0.018 | 89.7% / 0.002 | 86.5% / 0.020 | 70.2% / 0.191 | 83.3% / 0.127 | 70.1% / 0.151 | 71.4% / 0.026 | 93.7% / 0.010 | 86.1% / 0.037 |
+| sketch | 91.5% / 0.009 | 69.8% / 0.695 | 58.6% / 1.468 | 75.0% / 0.186 | 90.2% / 0.029 | 77.6% / 0.112 | 76.8% / 0.025 | 47.2% / 2.689 | 93.9% / 0.009 |
+| sketch_s10_h | 75.5% / 0.457 | 71.6% / 0.669 | 60.4% / 1.336 | 65.4% / 0.622 | 74.5% / 0.724 | 63.6% / 0.759 | 61.6% / 0.788 | 61.4% / 1.738 | 76.5% / 0.439 |
+| certified_h | 87.7% / 0.026 | 92.2% / 0.006 | 91.9% / 0.006 | 75.0% / 0.202 | 86.3% / 0.116 | 77.6% / 0.157 | 75.9% / 0.116 | 97.6% / 0.003 | 94.8% / 0.006 |
+| certified_is_h | 89.6% / 0.016 | 91.4% / 0.017 | 89.2% / 0.124 | 76.9% / 0.128 | 88.2% / 0.089 | 78.5% / 0.097 | 76.8% / 0.025 | 96.9% / 0.021 | 93.9% / 0.012 |
+| sketch_opt_h | 88.7% / 0.019 | 86.2% / 0.103 | 84.7% / 0.118 | 76.0% / 0.134 | 83.3% / 0.217 | 74.8% / 0.201 | 74.1% / 0.089 | 90.6% / 0.099 | 92.2% / 0.054 |
+| certified_rows_y | 86.8% / 0.010 | 87.9% / 0.008 | 91.0% / 0.005 | 99.0% / 0.000 | 84.3% / 0.090 | 88.8% / 0.008 | 92.9% / 0.012 | 95.3% / 0.009 | 92.2% / 0.012 |
+| learned_tree | 71.7% / 0.279 | 51.7% / 1.240 | 45.0% / 1.858 | 67.3% / 0.796 | 74.5% / 0.633 | 57.0% / 0.986 | 53.6% / 1.086 | 37.8% / 3.514 | 66.1% / 0.821 |
+| hist_pred_h | 89.6% / 0.020 | 89.7% / 0.027 | 86.5% / 0.065 | 75.0% / 0.139 | 89.2% / 0.085 | 78.5% / 0.103 | 76.8% / 0.025 | 89.0% / 0.061 | 93.9% / 0.011 |
+| m1 | 84.0% / 0.037 | 60.3% / 0.777 | 50.5% / 1.464 | 70.2% / 0.291 | 85.3% / 0.081 | 70.1% / 0.098 | 70.5% / 0.054 | 41.7% / 2.780 | 77.4% / 0.124 |
+| m1_h | 84.0% / 0.037 | 80.2% / 0.086 | 76.6% / 0.162 | 66.3% / 0.305 | 82.4% / 0.121 | 70.1% / 0.098 | 70.5% / 0.054 | 81.1% / 0.121 | 76.5% / 0.132 |
+| hybrid_h | 90.6% / 0.018 | 89.7% / 0.025 | 88.3% / 0.038 | 75.0% / 0.136 | 89.2% / 0.085 | 79.4% / 0.077 | 76.8% / 0.025 | 88.2% / 0.073 | 93.9% / 0.011 |
+| exh_rows10 | 75.5% / 0.330 | 60.3% / 0.909 | 54.1% / 1.531 | 68.3% / 0.834 | 76.5% / 0.567 | 65.4% / 0.578 | 69.6% / 0.410 | 48.0% / 2.839 | 74.8% / 0.432 |
+| ant_rule | 0.0% / 6.647 | 15.5% / 5.852 | 21.6% / 4.194 | 1.9% / 6.408 | 2.9% / 7.352 | 0.0% / 7.244 | 0.0% / 7.517 | 36.2% / 3.907 | 0.9% / 7.061 |
+| fit_gauss | 55.7% / 0.817 | 46.6% / 1.386 | 40.5% / 1.931 | 56.7% / 1.022 | 60.8% / 1.007 | 50.5% / 1.190 | 46.4% / 1.472 | 40.9% / 2.977 | 61.7% / 0.894 |
+| fit_laplace | 67.9% / 0.618 | 50.0% / 1.328 | 40.5% / 1.788 | 58.7% / 1.272 | 65.7% / 1.083 | 45.8% / 1.596 | 46.4% / 1.813 | 40.9% / 2.930 | 60.0% / 1.163 |
+| fit_t | 67.9% / 0.618 | 50.0% / 1.328 | 40.5% / 1.788 | 58.7% / 1.272 | 65.7% / 1.083 | 45.8% / 1.596 | 46.4% / 1.813 | 40.9% / 2.930 | 60.0% / 1.163 |
 
-Truth winners (Y, class rule): BFP6 682, MXFP6_E2M3 229, MXFP6_E3M2 59, MXINT6 30
-Class-rule winner = opt winner in 93.7% of matrices.
-certified_h read a median of 100% of the blocks (mean 90%); the rest were never rounded.
-certified_is_h read a median of 13% of the blocks (mean 28%); the rest were never rounded.
-certified_rows_y read a median of 41% of the blocks (mean 49%); the rest were never rounded.
+Truth winners (Y, class rule): BFP6 82, MXFP6_E2M3 425, MXFP6_E3M2 94, MXINT6 399
+Class-rule winner = opt winner in 84.2% of matrices.
+certified_h read a median of 100% of the blocks (mean 88%); the rest were never rounded.
+certified_is_h read a median of 25% of the blocks (mean 43%); the rest were never rounded.
+certified_rows_y read a median of 78% of the blocks (mean 66%); the rest were never rounded.

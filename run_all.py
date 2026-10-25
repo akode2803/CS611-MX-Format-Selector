@@ -50,7 +50,7 @@ DATA = os.path.join(HERE, "data")
 CANDIDATES = list(FORMATS)
 ALL = CANDIDATES + list(VARIANTS)
 
-# Teammates' scripts are run if they exist (edit this list when files are added).
+# Study scripts are run if they exist (edit this list when files are added).
 CORE_SCRIPTS = ["validate_predictor.py", "explore.py", "make_figures.py"]
 OPTIONAL_SCRIPTS = ["validate_selector.py", "scale_study.py", "q3_study.py",
                     "compare_reference.py", "stress.py"]
@@ -159,7 +159,7 @@ def step_baseline(a):
 
 
 def step_baseline_wx(a):
-    code, out = run(["run_baseline.py", "--mode", "wx", "--fresh"], os.path.join(LOGS, "run_baseline_wx.txt"))
+    code, out = run(["run_baseline.py", "--mode", "wx", "--variants", "--fresh"], os.path.join(LOGS, "run_baseline_wx.txt"))
     if code:
         sys.exit(out)
     return [os.path.join(RESULTS, "baseline_C_wx.json"), os.path.join(LOGS, "run_baseline_wx.txt")]
@@ -182,6 +182,10 @@ def step_tables(a):
                     + [pct(base[n, "ocp"]["y_rel_err_heldout"]), pct(base[n, "opt"]["y_rel_err_heldout"]),
                        pct(base_wx[n, "ocp"]["x_rel_err"]), pct(base[n, "ocp"]["w_rel_err"]),
                        base[n, "ocp"]["bits_per_elem"]])
+    n = "BFP6_g16"                               # comparison row: BFP with groups of 16 (not a candidate)
+    rows.append([n + " (comparison)"] + [pct(base_wx[n, p]["y_rel_err_heldout"]) for p in pols]
+                + [pct(base[n, "ocp"]["y_rel_err_heldout"]), pct(base[n, "opt"]["y_rel_err_heldout"]),
+                   pct(base_wx[n, "ocp"]["x_rel_err"]), pct(base[n, "ocp"]["w_rel_err"]), base[n, "ocp"]["bits_per_elem"]])
     out.append(write_table(
         "T1_main_C", ["format"] + [f"W+X held-out Y err % ({p})" for p in pols]
         + ["W only held-out Y err % (ocp)", "W only held-out Y err % (opt)", "X err % (ocp)", "W err % (ocp)",
@@ -190,7 +194,7 @@ def step_tables(a):
         "its reduction axis). Metric: relative Frobenius error of Y = W X on the held-out odd columns of X_cal "
         "(opt_out fits its objective on the even columns only). 'ocp' is the class floor rule; 'opt' searches the "
         "shared exponent e_ocp + {-2..+1} per block. Weights-only columns (X in full precision) for comparison. "
-        "Sorted by the class rule, W+X."))
+        "Sorted by the class rule, W+X. Last row: BFP with groups of 16 (16|4|5), for comparison only."))
 
     # T9: W+X ranking with a paired bootstrap interval for the gap (A11 tie rule)
     _, Xe = split_X(X)
@@ -245,12 +249,13 @@ def step_tables(a):
 
     # T4 BFP family and ablation (A6)
     rows = []
-    for n, d in [("BFP6", "16|4|5 floor, RNE (candidate)"), ("BFP6_g32e8", "32|8|5 floor, RNE (= MXINT6_sym)"),
+    for n, d in [("BFP6", "32|4|5 floor, RNE (candidate)"), ("BFP6_g16", "16|4|5 floor, RNE (comparison)"),
+                 ("BFP6_g32e8", "32|8|5 floor, RNE (= MXINT6_sym)"),
                  ("BFP6_b32_ceil", "32|8|5 ceil, RNE (v1 BFP6)"), ("BFP6_row", "100|8|5 ceil, RNE (one block per row)"),
                  ("MXINT6_sym", "reference: MXINT6_sym [-31, 31]"), ("MXINT6", "reference: MXINT6 (two's complement, A5)")]:
         rows.append([n, d, format_storage(n, 100, 100)[1]]
                     + [pct(base[n, p]["y_rel_err_heldout"]) for p in ("ocp", "ceil", "opt")])
-    for g, eb in ((16, 4), (32, 8)):
+    for g, eb in ((32, 4), (16, 4), (32, 8)):
         for rule in ("floor", "floor+1"):
             for rnd in ("rne", "trunc"):
                 Wq = bfp_ablation(W, g, rule, rnd, eb)
@@ -260,7 +265,8 @@ def step_tables(a):
         "T4_bfp_family", ["format", "definition g|e|m, exponent rule, rounding", "bits/elem",
                           "held-out Y err % (ocp)", "(ceil)", "(opt)"], rows,
         "BFP family on dataset C. BFP 32|8|5 with the floor rule is numerically identical to the symmetric MXINT6_sym "
-        "(test_v2_bfp_32_8_5_identical_to_mxint6_sym); the candidate MXINT6 also has the two's-complement code -32. Ablation rows are not candidates: they show that "
+        "(test_v2_bfp_32_8_5_identical_to_mxint6_sym); the candidate BFP6 32|4|5 differs from it only by its 4-bit "
+        "exponent range, and the candidate MXINT6 also has the two's-complement code -32. Ablation rows are not candidates: they show that "
         "truncation or an always-higher exponent is much worse than floor + RNE."))
 
     # T5 W only vs W+X (A8)

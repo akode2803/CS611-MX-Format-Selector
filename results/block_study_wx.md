@@ -3,16 +3,18 @@
 
 Mode: W and X both quantized (X with the same block length, down its columns).
 
-Held-out Y error % (class rule `ocp`; `opt` in brackets for the integer formats). MX formats pay 8 bits per scale, BFP 4 bits. **Bold** = the class layouts (MX block 32, BFP 16).
+Held-out Y error % (class rule `ocp`; `opt` in brackets for the integer formats). MX formats pay 8 bits per scale, BFP 4 bits. **Bold** = the class layouts (block 32 for every format).
 
 | block length | blocks/row | MX bits/elem | BFP bits/elem | E3M2 | E2M3 | E4M1 | MXINT6 | BFP6 | winner (same length) | ρ |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 100 | 1 | 6.08 | 6.04 | 7.555 | 4.473 | 15.163 | 6.516 [5.865] | 6.516 [5.994] | E2M3 | 8.05 |
 | 50 | 2 | 6.16 | 6.08 | 7.642 | 4.355 | 15.613 | 5.690 [5.389] | 5.694 [5.447] | E2M3 | 6.14 |
 | 34 | 3 | 6.24 | 6.12 | 7.662 | 4.265 | 15.771 | 5.337 [5.068] | 5.344 [5.152] | E2M3 | 5.24 |
+| 32 | 4 | 6.32 | 6.16 | **7.695** | **4.244** | **15.932** | **5.213 [4.973]** | **5.218 [5.047]** | E2M3 | 4.98 |
 | 25 | 4 | 6.32 | 6.16 | 7.719 | 4.233 | 16.041 | 5.004 [4.808] | 5.009 [4.878] | E2M3 | 4.61 |
 | 20 | 5 | 6.40 | 6.20 | 7.771 | 4.201 | 16.229 | 4.802 [4.629] | 4.810 [4.706] | E2M3 | 4.20 |
 | 17 | 6 | 6.48 | 6.24 | 7.798 | 4.158 | 16.324 | 4.630 [4.457] | 4.637 [4.540] | E2M3 | 3.72 |
+| 16 | 7 | 6.56 | 6.28 | 7.806 | 4.145 | 16.439 | 4.550 [4.404] | 4.558 [4.485] | E2M3 | 3.60 |
 | 13 | 8 | 6.64 | 6.32 | 7.829 | 4.136 | 16.495 | 4.303 [4.183] | 4.314 [4.250] | E2M3 | 3.22 |
 | 10 | 10 | 6.80 | 6.40 | 7.922 | 4.110 | 16.764 | 4.068 [3.958] | 4.077 [4.050] | MXINT6 | 2.84 |
 | 8 | 13 | 7.04 | 6.52 | 7.969 | 4.080 | 17.046 | 3.788 [3.712] | 3.798 [3.779] | MXINT6 | 2.44 |
@@ -42,10 +44,10 @@ Held-out Y error % (class rule `ocp`; `opt` in brackets for the integer formats)
 | dataset | class layouts winner | best (format, length) within 6.32 bits | error % | class-layout winner error % |
 |---|---|---|---|---|
 | A | E2M3 | BFP6, L=13 (6.32 bits) | 3.927 | 4.010 |
-| B | BFP6 | BFP6, L=13 (6.32 bits) | 3.228 | 3.278 |
+| B | MXINT6 | BFP6, L=13 (6.32 bits) | 3.228 | 3.612 |
 | C | E2M3 | E2M3, L=25 (6.32 bits) | 4.233 | 4.244 |
 | D | E2M3 | E2M3, L=25 (6.32 bits) | 4.062 | 4.168 |
-| E | BFP6 | BFP6, L=13 (6.32 bits) | 3.578 | 3.784 |
+| E | E2M3 | BFP6, L=13 (6.32 bits) | 3.578 | 4.114 |
 
 ρ = Σ n_nz·4^F / Σw² for that block length (the integer error is ρ·4⁻⁴/12): shorter blocks put each block maximum closer to its values, so ρ falls and the integer grids gain; FP error is relative to each value's own binade and only gains through fewer flushed values.
 

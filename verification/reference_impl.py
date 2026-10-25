@@ -203,8 +203,8 @@ def make_fmt(elem, block=32, rule="floor", rounding="rne", exp_bits=8):
                 exp_bits=exp_bits, exp_lo=lo, exp_hi=hi)
 
 
-def make_bfp(block=16, exp_bits=4, rule="floor", rounding="rne"):
-    """BFP6 per A6 (plan v3, locked 21 Oct): g|e|m = 16|4|5. Groups of 16, 4-bit shared
+def make_bfp(block=32, exp_bits=4, rule="floor", rounding="rne"):
+    """BFP6 per A6: g|e|m = 32|4|5. Groups of 32, 4-bit shared
     exponent clamped to [-8, 7], sign + 5-bit magnitude, k in [-31, 31],
     exponent floor(log2 absmax), RNE. Value = k * 2^-4 * 2^e."""
     return make_fmt(IntSym("BFP6", 6, signmag=True), block, rule, rounding, exp_bits)
@@ -218,7 +218,8 @@ FORMATS = {
     "MXFP_E4M1_onenan": make_fmt(MXFP("E4M1n", 4, 1, one_nan=True)),              # vmax 256
     "MXINT6": make_fmt(IntSym("MXINT6", 6, signmag=False)),
     "MXINT6_twos": make_fmt(IntSym("MXINT6t", 6, signmag=False, full_twos=True)),   # k in [-32, 31]
-    "BFP6": make_bfp(),                                                   # 16|4|5 (A6)
+    "BFP6": make_bfp(),                                                   # 32|4|5 (A6)
+    "BFP6_16_4": make_bfp(block=16),                                      # 16|4|5 (comparison row)
     "BFP6_32_8_ceil": make_bfp(block=32, exp_bits=8, rule="ceil"),        # old repo BFP6
     "BFP6_32_8_floor": make_bfp(block=32, exp_bits=8, rule="floor"),      # == MXINT6 grid
     "BFP6_row100": make_bfp(block=100, exp_bits=8, rule="ceil"),
@@ -342,7 +343,7 @@ def y_error(W, W_hat, X):
 def bits_per_element(fmt_name, K=100):
     """Storage per real element including the shared exponent.
       nominal  : b + e/B (long rows, no tail)
-      d11      : team A14, tail block stored with only its real values + its own exponent
+      d11      : A14, tail block stored with only its real values + its own exponent
       padded   : tail block stored in full (zero padding kept in memory)"""
     fmt = FORMATS[fmt_name]
     B, b, eb = fmt["block"], fmt["elem"].bits, fmt.get("exp_bits", 8)

@@ -1,5 +1,5 @@
 """Format selectors for CS611 A1, Group 8: predict every candidate's error, pick the smallest.
-Uses formats.py v2.2 (five candidates, MXINT6 two's complement, BFP6 16|4|5).
+Uses formats.py v3.0 (five candidates, MXINT6 two's complement, BFP6 32|4|5).
 
 Every approach has the same interface
     approach(W, h=None, **kw) -> {format name: predicted squared error}
@@ -43,7 +43,7 @@ the two-statistic closed forms rho (block peaks) and phi (element binades).
 The sketch is additive, so it can be built from a random sample of blocks (an unbiased estimate
 with an error bar) or merged across shards; scoring a format costs O(#bins), whatever the size
 of W.  The weighted-histogram idea comes from predictor.py; this version makes it exact,
-handles BFP's 16-blocks and exponent clamp and the two's-complement sign asymmetry.
+handles BFP's 4-bit exponent clamp (and any BFP group size) and the two's-complement sign asymmetry.
 """
 import time
 
@@ -54,7 +54,7 @@ from formats import FORMATS, spec, layout, elem_round, floor_log2, quantize, qua
 CANDIDATES = list(FORMATS)
 DMIN, DMAX = -8, 40          # octave offsets kept; d > DMAX flushes in every candidate
 NB = 64                      # mantissa bins per octave (exact for 6-bit formats)
-UNIT = 32                    # sampling unit: one MX block (two BFP blocks of 16 nest inside)
+UNIT = 32                    # sampling unit: one MX block (BFP groups of 32 or 16 nest inside)
 
 
 # --------------------------------------------------------------------------- helpers
@@ -472,7 +472,7 @@ certified_rows_y.last = None
 
 
 # --------------------------------------------------------------------------- learned rule
-FEATURES = ("sparsity", "kurtosis_nz", "log_rho32", "log_rho16", "log_phi", "flush_frac")
+FEATURES = ("sparsity", "kurtosis_nz", "log_rho32", "log_rho_bfp", "log_phi", "flush_frac")
 
 
 def features(W):

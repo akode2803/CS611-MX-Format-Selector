@@ -40,9 +40,9 @@ code and data that produce its numbers. The report names files by their path ins
 ## Answer in one paragraph
 
 **MXFP6 E2M3** is the most suitable 6-bit format for dataset C. With W and X both quantized it has
-the lowest held-out output error under every scale rule we tried (4.244% against BFP6 4.558% under
-the class rule), and it is also first when only the weights are quantized. Under 11 activation
-families it stays first in 9; BFP6 wins two near ties.
+the lowest held-out output error under every scale rule we tried (4.244% against MXINT6 5.213% and
+BFP6 5.218% under the class rule), and it is also first when only the weights are quantized. It
+stays first under all 11 activation families we tried.
 The chosen selection method, an **exact activation-weighted sketch**, scores all five candidates
 without quantizing anything and makes the same choice as brute force with the same objective.
 Report sections 3–7 give the details.
@@ -70,7 +70,7 @@ Tests:
     python test_formats.py                       # 31 tests
     python test_selector.py                      # 13 tests, including the exactness of the chosen method
     python test_scale_opt.py                     # 16 tests
-    python verification/test_reference_impl.py   # 16 tests
+    python verification/test_reference_impl.py   # 17 tests
 
 ## Using the chosen method on other matrices
 

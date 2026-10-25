@@ -542,15 +542,18 @@ cand = [
      "384", "32", "8-bit (E8M0)", f"{float(T2['MXFP6_E4M1']['bits/elem']):.2f}"],
     ["MXINT6", "6-bit two's-complement integer k ∈ [−32, 31], value k·2^[−4] (so −2 … 1.9375)",
      "1.9375", "32", "8-bit (E8M0)", f"{float(T2['MXINT6']['bits/elem']):.2f}"],
-    ["BFP6 (16|4|5)", "sign and a 5-bit magnitude M ∈ [0, 31], value ±M·2^[E−4]; E = shared exponent",
-     "31 (×2^[E−4])", "16", "4-bit, E ∈ [−8, 7]", f"{float(T2['BFP6']['bits/elem']):.2f}"],
+    ["BFP6 (32|4|5)", "sign and a 5-bit magnitude M ∈ [0, 31], value ±M·2^[E−4]; E = shared exponent",
+     "31 (×2^[E−4])", T2["BFP6"]["block"], "4-bit, E ∈ [−8, 7]", f"{float(T2['BFP6']['bits/elem']):.2f}"],
 ]
 table(["Format", "Element (6 bits)", "v_[max] (element)", "Block", "Shared scale", "Bits/element"], cand,
       cap="The five candidates. Bits per element count the codes and the block scales of a 100 × 100 matrix "
           "(results/tables/T2_storage.csv).", widths=[2.6, 7.2, 1.8, 1.2, 2.4, 1.6], size=8.5)
 P("**Storage.** A row of W has 100 values. With blocks of 32 it holds three full blocks and a **tail block of 4** "
   "values that gets its own scale (no padding), so 4 scales of 8 bits per row: (100·6 + 4·8)/100 = 6.32 bits per "
-  "element. BFP6 has 7 groups per row (six of 16 and a tail of 4) with 4-bit exponents: (100·6 + 7·4)/100 = 6.28.")
+  f"element. BFP6 has the same {T2['BFP6']['blocks/row (K=100)']} groups per row, but with 4-bit exponents: "
+  f"(100·6 + 4·4)/100 = {float(T2['BFP6']['bits/elem']):.2f}. For comparison we also report BFP with groups of 16 "
+  f"(16|4|5, {T2['BFP6_g16']['blocks/row (K=100)']} groups per row, {float(T2['BFP6_g16']['bits/elem']):.2f} bits per "
+  "element); it is not a candidate.")
 H("2.3 How the shared exponent is chosen: scale policies", 2)
 P("The shared exponent is the only free parameter of a block. Every policy below stores a power-of-two scale in the "
   "same field, so none of them changes the storage. e_[max] is the exponent of the largest binade of the element "
@@ -578,10 +581,13 @@ H("2.4 Assumptions and decisions", 2)
 P("Where the class material leaves a choice open, we made the assumptions below. Each is stated so that it can be "
   "checked, and Section 4.4 shows how much the ones that change numbers matter.")
 bfp32 = [r for r in T4 if r["format"] == "BFP6_g32e8"][0]
+T4N = {r["format"]: r for r in T4}
+bfp_eq_sym = T4N["BFP6"]["held-out Y err % (ocp)"] == T4N["MXINT6_sym"]["held-out Y err % (ocp)"]
 assum = [
-    ["A1", "MX block length 32, along the rows of W (the reduction axis). With 100 columns a row has blocks of "
-           "32, 32, 32 and a tail of 4, and the tail has its own scale.",
-     "The class convention and the OCP MX specification [2]. Not padding the tail wastes no storage."],
+    ["A1", "Block length 32 for every candidate (MX blocks and BFP6 groups), along the rows of W (the reduction "
+           "axis). With 100 columns a row has blocks of 32, 32, 32 and a tail of 4, and the tail has its own scale.",
+     "The class convention and the OCP MX specification [2]; the course staff advised groups of 32 for this "
+     "assignment. Not padding the tail wastes no storage."],
     ["A2", "MX shared scale: an 8-bit power of two (E8M0), exponent clamped to [−127, 127].", "OCP MX specification [2]."],
     ["A3", "Round half to even; saturate at ±v_[max]; no infinity or NaN codes.", "Class notebook [1]; OCP MX conversion rules [2]."],
     ["A4", "MXFP6 E4M1 reserves no codes: all 64 are finite and v_[max] = 384.",
@@ -589,12 +595,12 @@ assum = [
      "Section 4.4."],
     ["A5", "MXINT6 elements are two's-complement integers k ∈ [−32, 31] times 2^[−4].",
      "The standard integer encoding. The symmetric range [−31, 31] is tested in Section 4.4."],
-    ["A6", "BFP6 = 16|4|5: groups of 16 values, a 4-bit shared exponent E = floor(log_[2] max) clamped to "
+    ["A6", "BFP6 = 32|4|5: groups of 32 values, a 4-bit shared exponent E = floor(log_[2] max) clamped to "
            "[−8, 7], and sign + 5-bit magnitude per value.",
-     "The class defines BFP by group size | exponent bits | mantissa bits without fixing them. With 32 values and "
-     f"an 8-bit exponent, BFP would be numerically identical to symmetric MXINT6 ({f3(float(bfp32['held-out Y err % (ocp)']))}% "
-     "in both cases, weights only); groups of 16 with a 4-bit exponent make it a distinct candidate at similar "
-     "storage (6.28 bits)."],
+     "The class defines BFP by group size | exponent bits | mantissa bits without fixing them; we use groups of "
+     "32 (A1). With an 8-bit exponent BFP would be numerically identical to symmetric MXINT6; the 4-bit exponent "
+     f"makes it a distinct format, with cheaper scales ({float(T2['BFP6']['bits/elem']):.2f} bits per element) and a "
+     "limited range. BFP with groups of 16 is reported as a comparison row (Section 4.4)."],
     ["A7", "One format for the whole matrix; no mixing of formats between blocks.",
      "The question asks for one format per matrix. Section 7.4 checks what mixing would gain."],
     ["A8", "Primary setting W+X; weights only as a secondary setting.", "Section 1.3."],
@@ -672,16 +678,31 @@ check(all(T9[p]["verdict"] == "MXFP6_E2M3" and float(T9[p]["95% CI low"]) > 0 fo
 check(all(SC_RANK[p]["verdict"] == "E2M3" for p in SC_RANK), "E2M3 wins weights-only under every policy")
 xs_c = XS["C"]
 xs_lose = [f for f in xs_c if winner_of(xs_c[f]["winner"]) != "E2M3"]
-check(all(num(xs_c[f]["margin pp"]) < 0.1 and winner_of(xs_c[f]["winner"]) == "BFP6" for f in xs_lose),
-      "the families where E2M3 loses are near ties won by BFP6")
+check(all(num(xs_c[f]["margin pp"]) < 0.1 and winner_of(xs_c[f]["winner"]) in ("MXINT6", "BFP6") for f in xs_lose),
+      "the families where E2M3 loses are near ties won by an integer format")
+xs_min = min(num(xs_c[f]["margin pp"]) for f in xs_c)
 out_share = OUT_T["400, 20σ, continuous"]["blocks with an outlier"]
 seeds = lambda cell: int(re.search(r"\((\d+)/10\)", cell).group(1))                    # noqa: E731
-check(seeds(SPARSE["40%"]["winner ocp (seeds), margin pp"]) <= 7, "40% zeros is a tie")
-check(all(SPARSE[z]["winner ocp (seeds), margin pp"].startswith("BFP6 (10/10)") for z in SPARSE if num(z) >= 50),
-      "BFP6 wins every seed from 50% zeros")
+margin = lambda cell: float(re.search(r"\+(\d+\.\d+)", cell).group(1))                 # noqa: E731
+CMPC = "BFP6_g16 (cmp.)"                                   # the BFP 16|4|5 comparison column of the Q3 tables
+check(all(winner_of(v["winner ocp (seeds), margin pp"]) == "E2M3" for v in OUT_T.values()),
+      "E2M3 wins every outlier case")
+hi = [v for k, v in OUT_T.items() if "continuous" in k and ", 100σ" in k]
+check(all(num(v[CMPC]) < num(v["E2M3"]) for v in hi), "BFP 16|4|5 beats E2M3 at 100σ")
+sp_win = [z for z in SPARSE if winner_of(SPARSE[z]["winner ocp (seeds), margin pp"]) == "E2M3"]
+sp_lose = [z for z in SPARSE if z not in sp_win]
+sp_all = max((z for z in sp_win if seeds(SPARSE[z]["winner ocp (seeds), margin pp"]) == 10), key=num)
+check(sp_lose and min(num(z) for z in sp_lose) > max(num(z) for z in sp_win), "one crossover in the sparsity sweep")
+sp_cross = min(sp_lose, key=num)
+check(all(winner_of(SPARSE[z]["winner ocp (seeds), margin pp"]) == "MXINT6"
+          and margin(SPARSE[z]["winner ocp (seeds), margin pp"]) < 0.05 for z in sp_lose),
+      "past the crossover MXINT6 wins by a hair over BFP6")
 row10k = [r for r in SCALEV if r["spread"].startswith("row") and "10^4" in r["spread"]][0]
 col_rows = [r for r in SCALEV if r["spread"].startswith("column")]
-check(int(row10k["BFP6 clamped blocks"]) > 0 and num(row10k["BFP6"]) > 2 * num(row10k["E2M3"]), "BFP6 clamps at 10^4")
+CLAMP = "clamped blocks BFP6 / BFP6_g16"
+clamp32 = lambda r: int(r[CLAMP].split("/")[0])            # noqa: E731
+N_GROUPS = 100 * int(T2["BFP6"]["blocks/row (K=100)"])
+check(clamp32(row10k) > 0 and num(row10k["BFP6"]) > 2 * num(row10k["E2M3"]), "BFP6 clamps at 10^4")
 check(all(r["weak-25% winner"] in ("E3M2", "E4M1") for r in col_rows[1:]), "wide-range formats keep the weak channels")
 c_col = [h for h in SHIFT_H if h.startswith("C ")][0]
 shift_c = {r["X_test family"]: num(r[c_col].split("/")[1]) for r in SHIFT}
@@ -692,13 +713,16 @@ box("Q1. Which format is most suitable for W_[C] at 6 bits?", [
     "scale rule, against " + ", ".join(f"{LONG[n]} {f3(E[n])}%" for n in RANK[1:]) + f". The gap to {LONG[RANK[1]]} "
     f"is {f3(gap_v)} pp, with 95% interval [{f3(gap_lo)}, {f3(gap_hi)}]: not a tie. Storage: "
     f"{float(T2[WIN]['bits/elem']):.2f} bits per element.",
-    f"It is first under every scale policy, and also with weights only ({f3(EW[WIN])}% against {LONG[RANK_W[1]]} "
-    f"{f3(EW[RANK_W[1]])}%).",
-    f"Under {len(xs_c)} different activation families it stays first in {len(xs_c) - len(xs_lose)}"
-    + ("; BFP6 wins narrowly for the families " + " and ".join(f"{XNAME[f]} ({f2(num(xs_c[f]['margin pp']))} pp)"
-                                                              for f in xs_lose) + ". " if xs_lose else ". ")
-    + f"Choosing with {XC} costs at most {f3(shift_c[worst_fam])} dB if {XT} comes from any of these families "
-    f"(worst case: {XNAME[worst_fam]}).",
+    f"It is first under every scale policy, and also with weights only ({f3(EW[WIN])}% against "
+    f"{f3(EW[RANK_W[1]])}% for " + " and ".join(LONG[n] for n in RANK_W[1:] if f3(EW[n]) == f3(EW[RANK_W[1]])) + ").",
+    (f"Under {len(xs_c)} different activation families it stays first in {len(xs_c) - len(xs_lose)}; an integer "
+     "format wins narrowly for " + " and ".join(f"{XNAME[f]} ({f2(num(xs_c[f]['margin pp']))} pp)" for f in xs_lose)
+     + ". " if xs_lose else
+     f"It is also first under all {len(xs_c)} activation families we tried, by at least {f2(xs_min)} pp. ")
+    + (f"Choosing with {XC} costs nothing: whichever of these families {XT} comes from, E2M3 is still the best format for it."
+       if shift_c[worst_fam] == 0 else
+       f"Choosing with {XC} costs at most {f3(shift_c[worst_fam])} dB if {XT} comes from any of these families "
+       f"(worst case: {XNAME[worst_fam]})."),
 ])
 box("Q2. Can an efficient method match exhaustive evaluation without quantizing every candidate?", [
     "**Yes. The chosen method is the exact activation-weighted sketch**: `best, scores = selector.select_format(W, X_cal)` "
@@ -720,10 +744,11 @@ box("Q2. Can an efficient method match exhaustive evaluation without quantizing 
 b632 = max((b for b in BUDGET if BUDGET[b]["best"] == "E2M3"), key=float)
 check(all(BUDGET[b]["best"] == "E2M3" for b in BUDGET if 6.08 <= float(b) <= float(b632)), "E2M3 best up to b632")
 box("Q3. How do outliers, sparsity and variation in scale affect the selection?", [
-    f"**Outliers:** E2M3 keeps winning up to outliers of 20σ, even with an outlier in {out_share} of the blocks. At "
-    "100σ BFP6 wins: its blocks are half as long, so each outlier coarsens fewer neighbours.",
-    "**Sparsity:** zeros help the integer grids, whose precision is set by the block maximum. BFP6 ties E2M3 at 40% "
-    "zeros and wins from 50%; the FP error hardly changes.",
+    f"**Outliers:** E2M3 wins in every case we tried, up to outliers of 100σ and an outlier in {out_share} of the "
+    "blocks. Its lead shrinks at 100σ, where every format flushes the outlier's neighbours; BFP with groups of 16 "
+    "(a comparison, not a candidate) would beat it there, because each outlier then coarsens fewer neighbours.",
+    "**Sparsity:** zeros help the integer grids, whose precision is set by the block maximum; the FP error hardly "
+    f"changes. E2M3 still wins up to {max(sp_win, key=num)} zeros; from {sp_cross} MXINT6 and BFP6 overtake it.",
     "**Variation in scale:** a different gain per output row is absorbed by the 8-bit MX scale, but BFP6's 4-bit "
     "exponent runs out of range at a spread of 10^[4]. Gains per input channel leave E2M3 best overall, but only "
     "the wide-range formats (E3M2, E4M1) keep the weakest channels accurate.",
@@ -740,10 +765,15 @@ for n in RANK:
     rows.append([LONG[n]] + [f3(float(r[WX.format(p)])) for p in ("ocp", "ceil", "opt", "opt_out")]
                 + [f3(float(r["W only held-out Y err % (ocp)"])), f3(float(r["W only held-out Y err % (opt)"])),
                    f"{float(r['bits/elem']):.2f}"])
+G16 = T1["BFP6_g16 (comparison)"]
+rows.append(["BFP 16|4|5 (comparison, not a candidate)"] + [f3(float(G16[WX.format(p)])) for p in ("ocp", "ceil", "opt", "opt_out")]
+            + [f3(float(G16["W only held-out Y err % (ocp)"])), f3(float(G16["W only held-out Y err % (opt)"])),
+               f"{float(G16['bits/elem']):.2f}"])
 t_res = table(["Format", "W+X `ocp` (class rule)", "W+X `ceil`", "W+X `opt`", "W+X `opt_out`", "Weights only `ocp`",
                "Weights only `opt`", "Bits/elem"], rows,
       cap="Dataset C: held-out output error e_[Y] (%) under each scale policy, sorted by the class rule. "
-          "Primary columns: W and X quantized (results/tables/T1_main_C.csv).", highlight=(0,), size=8.5)
+          "Primary columns: W and X quantized (results/tables/T1_main_C.csv). Last row: BFP with groups of 16, "
+          "for comparison only.", highlight=(0,), size=8.5)
 check(all(min(NAMES, key=lambda n: float(T1[n][WX.format(p)])) == WIN for p in ("ocp", "ceil", "opt", "opt_out"))
       and all(min(NAMES, key=lambda n: float(T1[n][f"W only held-out Y err % ({p})"])) == WIN for p in ("ocp", "opt")),
       "E2M3 is lowest in every column of the result table")
@@ -757,7 +787,9 @@ table(["Scale policy", "Ranking (best first)", "Gap winner vs runner-up (pp)", "
       cap="W+X ranking and the gap between the top two, paired bootstrap over the held-out columns "
           "(results/tables/T9_wx_ranking.csv).")
 H("4.2 Why E2M3 wins", 2)
-check(int(T6["MXFP6_E2M3"]["zeroed"]) < int(T6["BFP6"]["zeroed"]) < int(T6["MXINT6"]["zeroed"]), "zeroed counts order")
+check(int(T6["MXFP6_E2M3"]["zeroed"]) < min(int(T6["BFP6"]["zeroed"]), int(T6["MXINT6"]["zeroed"])), "zeroed counts order")
+z_int = (f"{T6['MXINT6']['zeroed']} (MXINT6 and BFP6 alike)" if T6["MXINT6"]["zeroed"] == T6["BFP6"]["zeroed"]
+         else f"{T6['BFP6']['zeroed']} (BFP6) and {T6['MXINT6']['zeroed']} (MXINT6)")
 werr = {n: float(T1[n]["W err % (ocp)"]) for n in NAMES}
 xerr = {n: float(T1[n]["X err % (ocp)"]) for n in NAMES}
 check(min(werr, key=werr.get) == WIN, "E2M3 has the smallest weight error")
@@ -769,19 +801,23 @@ w_share = {n: w_term[n] / (w_term[n] + x_term[n]) for n in NAMES}
 bullets([
     f"**It keeps the small weights.** E2M3 has 3 mantissa bits and subnormals, so small weights stay on a fine grid: "
     f"it flushes only {T6['MXFP6_E2M3']['zeroed']} of the 10,000 weights to zero. The integer grids flush "
-    f"{T6['BFP6']['zeroed']} (BFP6) and {T6['MXINT6']['zeroed']} (MXINT6), because their step is fixed by the block "
-    f"maximum. With weights only, flushed weights carry {SRC[('MXINT6', 'ocp')]['zero']} of MXINT6's squared error and "
+    f"{z_int}, because their step is fixed by the block maximum. With weights only, flushed weights carry {SRC[('MXINT6', 'ocp')]['zero']} of MXINT6's squared error and "
     f"{SRC[('BFP6', 'ocp')]['zero']} of BFP6's, against {SRC[('E2M3', 'ocp')]['zero']} for E2M3. This is the known "
     "trade-off between floating-point and integer grids, studied for 8-bit formats in [10, 11].",
     f"**It does not pay for range that W_[C] does not need.** The largest weight is only {MAXS:.1f}σ, so E3M2 and E4M1 "
     "spend exponent bits on range and lose mantissa bits where the weights are. Under the class rule, clipping is "
     f"{SRC[('E3M2', 'ocp')]['clip']} of E3M2's weight error and {SRC[('E4M1', 'ocp')]['clip']} of E4M1's, because "
     "their grids end well below the top of their binade (Figure 2).",
-    f"**The weight error decides.** Quantized on its own, {XC} is handled slightly better by "
-    f"{LONG[x_best]} ({f3(xerr[x_best])}% against {f3(xerr[WIN])}% for E2M3): it is Gaussian with a small range, so "
-    f"BFP6's 16-value groups fit it well. But E2M3's weight error is much smaller ({f3(werr[WIN])}% against "
-    f"{f3(werr['BFP6'])}% for BFP6), and the weight term is the larger part of the output error "
-    f"({pct(w_share[WIN], 0)} of it for E2M3, {pct(w_share['BFP6'], 0)} for BFP6; Section 6.1 defines the two terms).",
+    (f"**Both error terms favour it, and the weight term decides.** Quantized on its own, {XC} also has its smallest "
+     f"error with E2M3 ({f3(xerr[WIN])}%, against {f3(xerr['MXINT6'])}% for MXINT6 and {f3(xerr['BFP6'])}% for BFP6), "
+     f"but the gap is small: {XC} is Gaussian with a small range, which suits the integer grids too. The weight "
+     f"errors differ much more ({f3(werr[WIN])}% against {f3(werr['BFP6'])}% for BFP6)"
+     if x_best == WIN else
+     f"**The weight error decides.** Quantized on its own, {XC} is handled slightly better by "
+     f"{LONG[x_best]} ({f3(xerr[x_best])}% against {f3(xerr[WIN])}% for E2M3). But E2M3's weight error is much "
+     f"smaller ({f3(werr[WIN])}% against {f3(werr['BFP6'])}% for BFP6)")
+    + f", and the weight term is the larger part of the output error ({pct(w_share[WIN], 0)} of it for E2M3, "
+    f"{pct(w_share['BFP6'], 0)} for BFP6; Section 6.1 defines the two terms).",
 ])
 figure("fig2_error_model.png", "RMS relative rounding error of each element grid against a value's magnitude "
        "relative to its block maximum. E2M3 is finest over the top octaves, where most of W_[C]'s energy lies; the "
@@ -796,13 +832,31 @@ table(["Activation family", "Winner (seeds)", "Margin pp", "E3M2", "E2M3", "E4M1
           "(mean over 5 seeds for the synthetic families).", size=8.5)
 xs_cw = XS_W["C"]
 check(all(winner_of(xs_cw[f]["winner"]) == "E2M3" for f in xs_cw), "weights only: E2M3 wins C under every family")
+b_col = [h for h in SHIFT_H if h.startswith("B ")][0]
+shift_b = {r["X_test family"]: num(r[b_col].split("/")[1]) for r in SHIFT}
+worst_b = max(shift_b, key=shift_b.get)
+check(shift_b[worst_b] > 1, "dataset B's choice is fragile under other activations")
 shift_cw = max(num(r[[h for h in SHIFT_H_W if h.startswith("C ")][0]].split("/")[1]) for r in SHIFT_W)
-P(f"E2M3 wins under {len(xs_c) - len(xs_lose)} of the {len(xs_c)} families. "
-  + (f"The exceptions, " + " and ".join(XNAME[f] for f in xs_lose) + ", are near ties won by BFP6 by less than "
-     "0.1 pp: correlated or sparse activations are easier for BFP6's integer grid. " if xs_lose else "")
-  + f"What matters for the graders is the cost of committing to E2M3 with {XC}: on {XT} from any family it is at most "
-  f"{f3(shift_c[worst_fam])} dB (worst case {XNAME[worst_fam]}; results/x_stress_wx.md, last table). With weights only, "
-  f"E2M3 wins under every family and the cost is at most {f3(shift_cw)} dB.")
+xs_tight = min(xs_c, key=lambda f: num(xs_c[f]["margin pp"]))
+P((f"E2M3 wins under {len(xs_c) - len(xs_lose)} of the {len(xs_c)} families. The exceptions, "
+   + " and ".join(XNAME[f] for f in xs_lose) + ", are near ties won by an integer format by less than 0.1 pp. "
+   if xs_lose else
+   f"E2M3 wins under all {len(xs_c)} families, in every seed. The closest family is {XNAME[xs_tight]} "
+   f"({xs_c[xs_tight]['margin pp']} pp ahead of the runner-up); with massive activations BFP6 falls far behind "
+   f"MXINT6 ({xs_c['massive']['errors E3M2 / E2M3 / E4M1 / MXINT6 / BFP6'].split('/')[4].strip()}% against "
+   f"{xs_c['massive']['errors E3M2 / E2M3 / E4M1 / MXINT6 / BFP6'].split('/')[3].strip()}%): the largest values "
+   "of a channel multiplied by 100 lie above 248, the largest value BFP6 can represent at the top of its 4-bit "
+   "exponent range, so they saturate. ")
+  + (f"What matters in practice is the cost of committing to E2M3 with {XC}. It is zero: for {XT} from any of the "
+     "families, E2M3 remains the best format (results/x_stress_wx.md, last table). This is not automatic: for dataset "
+     f"B, whose {XC} winner {SHORT[T7[('B', 'wx', 'ocp')]['winner']]} is a near tie, the same test costs up to "
+     f"{f3(shift_b[worst_b])} dB ({XNAME[worst_b]})."
+     if shift_c[worst_fam] == 0 else
+     f"What matters in practice is the cost of committing to E2M3 with {XC}: on {XT} from any family it is at most "
+     f"{f3(shift_c[worst_fam])} dB (worst case {XNAME[worst_fam]}; results/x_stress_wx.md, last table).")
+  + (" With weights only, E2M3 also wins under every family, and committing to it costs nothing either."
+     if shift_cw == 0 else
+     f" With weights only, E2M3 wins under every family and the cost is at most {f3(shift_cw)} dB."))
 H("4.4 Do our assumptions change the answer?", 2)
 e4 = {k: f3(float(v["held-out Y err % (ocp)"])) for k, v in T3.items()}
 check(all(float(v) > max(EW[n] for n in NAMES if n != "MXFP6_E4M1") for v in e4.values()), "E4M1 is last in every case")
@@ -818,7 +872,13 @@ bullets([
     f"{f3(float(T8[('C', 'opt')]['symmetric [-31,31]']))}%), because a negative block maximum may use the code −32.",
     f"**BFP organisation (A6).** BFP with 32 values, an 8-bit exponent, the floor rule and round-half-to-even is "
     f"numerically identical to symmetric MXINT6 ({f3(float(bfp32['held-out Y err % (ocp)']))}%, a unit test checks "
-    "this). Our BFP6 differs through its groups of 16 and its 4-bit exponent.",
+    "this). Our BFP6 has the same grid and groups, so it differs from symmetric MXINT6 only where a group leaves the "
+    + ("range of its 4-bit exponent; no group of W_[C] does, so on C the two give exactly the same error. "
+       if bfp_eq_sym else "range of its 4-bit exponent. ")
+    + f"Groups of 16 (16|4|5) lower BFP's error to {f3(float(G16[WX.format('ocp')]))}% with W and X quantized "
+    f"({f3(float(G16['W only held-out Y err % (ocp)']))}% weights only), for "
+    f"{float(G16['bits/elem']) - float(T2['BFP6']['bits/elem']):.2f} more bits per element"
+    + (f"; E2M3 stays better ({f3(E[WIN])}%)." if float(G16[WX.format('ocp')]) > E[WIN] else "."),
     "**Range limits.** No BFP6 group of W_[C] reaches the limits of the 4-bit exponent (0 clamped groups, "
     "results/tables/T6_diagnostics_ocp.csv), so every candidate can represent W_[C].",
 ])
@@ -832,10 +892,25 @@ for k in "ABCDE":
 table(["Dataset", "E3M2", "E2M3", "E4M1", "MXINT6", "BFP6", "Winner W+X", "Margin pp", "Winner weights only"], t7rows,
       cap="Context only: the five course datasets with the same X_[cal], W+X held-out e_[Y] (%), class rule "
           "(results/tables/T7_datasets_A_to_E.csv). Our dataset is C.", highlight=(2,))
-win_wx = {k: T7[(k, "wx", "ocp")]["winner"] for k in "ABCDE"}
-check(win_wx["C"] == win_wx["D"] == "MXFP6_E2M3" and win_wx["E"] == win_wx["B"] == "BFP6", "A-E winners as described")
-P("The answer depends on the data: C and D choose E2M3, B and E choose BFP6, and A is a near tie between E2M3 and "
-  f"BFP6 ({f3(float(T7[('A', 'wx', 'ocp')]['margin to 2nd (pp)']))} pp).")
+
+
+def by_winner(mode):
+    g = {}
+    for k in "ABCDE":
+        g.setdefault(SHORT[T7[(k, mode, "ocp")]["winner"]], []).append(k)
+    return "; ".join(", ".join(v) + (" choose " if len(v) > 1 else " chooses ") + w
+                     for w, v in sorted(g.items(), key=lambda kv: -len(kv[1])))
+
+
+int_wins = [(k, m) for k in "ABCDE" for m in ("wx", "w") if T7[(k, m, "ocp")]["winner"] in ("MXINT6", "BFP6")]
+check(int_wins and all(abs(float(T7[km + ("ocp",)]["MXINT6"]) - float(T7[km + ("ocp",)]["BFP6"])) < 0.01 for km in int_wins),
+      "where an integer format wins, MXINT6 and BFP6 are within 0.01 pp")
+check(all(T7[(k, "wx", "ocp")]["winner"] == "MXFP6_E2M3" for k in "CD"), "C and D choose E2M3 in W+X")
+P(f"With W and X quantized, {by_winner('wx')}; with weights only, {by_winner('w')}. Wherever an integer format "
+  "wins, MXINT6 and BFP6 are within 0.01 pp of each other, because inside its exponent range BFP6 has the same grid "
+  "as symmetric MXINT6. So the best format does depend on the data, and C and D are the clearest cases for E2M3 "
+  f"(margins {f3(float(T7[('C', 'wx', 'ocp')]['margin to 2nd (pp)']))} and "
+  f"{f3(float(T7[('D', 'wx', 'ocp')]['margin to 2nd (pp)']))} pp).")
 
 # =========================================================================== 5. scale optimization
 H("5. Scale optimization", 1)
@@ -936,7 +1011,8 @@ P("**The algorithm**, for W (and then for X^[T] in the W+X setting):")
 bullets([
     f"**Activation weights.** Compute h_[j] = Σ_[k] X_[jk]^[2] for every input channel from the calibration "
     "columns. (For the activation term: g_[j] = Σ_[i] W_[ij]^[2] for every column of W.)",
-    "**Sketch.** Make one pass over the matrix for each block layout (MX blocks of 32, BFP groups of 16). For each "
+    "**Sketch.** Make one pass over the matrix for each block organisation (MX blocks with an 8-bit scale, BFP6 "
+    "groups with a clamped 4-bit exponent; the two differ only where the clamp acts). For each "
     "non-zero value, find its bin: its sign, its octave offset d, and which of 64 equal slices of [1, 2) its "
     "mantissa μ falls in. Add h_[j]·m_[2], h_[j]·m_[1] and h_[j]·m_[0] to that bin. The sketch is these "
     f"2 × {S.DMAX - S.DMIN + 1} × {S.NB} × 3 sums per layout, the same for every format. (Offsets d run from "
@@ -1016,12 +1092,20 @@ by = [[XNAME.get(k, k)] + [f"{pct(bench('random', a, k)['top1'], 0)} / {f3(bench
                            for a in (M, "exhaustive_y", "exhaustive_w")] for k in XKINDS]
 table(["Activation family", "Chosen method", "Brute force, full output", "Brute force, unweighted"], by,
       cap="Random suite by activation family: top-1 agreement / mean regret (dB), W+X.")
-lr, lry = bench("random", M, "lowrank"), bench("random", "exhaustive_y", "lowrank")
-check(lry["top1"] - lr["top1"] > 0.05 and all(abs(bench("random", M, k)["top1"] - bench("random", "exhaustive_y", k)["top1"])
-                                              < 0.03 for k in XKINDS if k != "lowrank"), "low rank is the only clear gap")
-P(f"The only clear gap to full brute force is low-rank activations ({pct(lr['top1'])} against {pct(lry['top1'])}): "
-  "there the error depends on how ΔW lines up with a few dominant directions of X, which a per-weight weighting "
-  "cannot see. Section 6.5 lists an extension that handles it.")
+fam_d = {k: bench("random", "exhaustive_y", k)["top1"] - bench("random", M, k)["top1"] for k in XKINDS}
+ahead = sorted((k for k in XKINDS if fam_d[k] > 0.03), key=lambda k: -fam_d[k])
+behind = sorted((k for k in XKINDS if fam_d[k] < -0.02), key=lambda k: fam_d[k])
+check(ahead and set(ahead) <= {"relu", "lowrank"}, "full brute force is clearly ahead only where X has dominant directions")
+P("Per family the two are within a few points of each other, in both directions. Full brute force is clearly ahead "
+  "for " + " and ".join(f"{XNAME[k]} activations ({pct(bench('random', M, k)['top1'], 0)} against "
+                        f"{pct(bench('random', 'exhaustive_y', k)['top1'], 0)})" for k in ahead)
+  + ": these have a few dominant directions (for ReLU, the non-zero mean), so the error depends on how ΔW lines up "
+  "with them, which a per-weight weighting cannot see. Section 6.5 lists an extension that handles it. "
+  + ("The chosen method is ahead for " + " and ".join(f"{XNAME[k]} ({pct(bench('random', M, k)['top1'], 0)} against "
+                                                       f"{pct(bench('random', 'exhaustive_y', k)['top1'], 0)})"
+                                                       for k in behind)
+     + ", where the off-diagonal part of X·X^[T] on 128 fit columns is mostly sampling noise that does not carry "
+     "over to the held-out columns." if behind else ""))
 figure("fig6_selector_accuracy_vs_cost.png", "Accuracy against cost of the chosen method (star) and of the methods "
        f"we compared it with, random suite, W+X. Colour: what each method scores (no activation weighting, "
        "activation-weighted, or the full output on the fit columns).", width=17)
@@ -1098,11 +1182,13 @@ better = [a for a in S.ROLE if a != M and bench("random", a)["top1"] > BM["top1"
 check(not better, "no compared method is better than the chosen one by more than two standard errors")
 COARSE = ("sketch_nb4_h", "sketch_nb16_h")
 check(all(a in COARSE or bench("random", a)["ms"] > BM["ms"] for a in close), "every close method is slower or coarser")
-adv_m, adv_16 = bench("adversarial", M)["top1"], bench("adversarial", "sketch_nb16_h")["top1"]
-check(adv_16 < adv_m, "16 slices are not exact on the adversarial suite")
+NBS = ("sketch_nb1_h", "sketch_nb4_h", "sketch_nb16_h")
+check(all(bench("random", a)["top1"] < BM["top1"] for a in NBS), "fewer slices are less accurate on the random suite")
+close_coarse = [a for a in close if a in COARSE]
 cheap = ("closed_form_h", "learned_tree", "fit_gauss", "ant_rule")
 check(all(bench("random", a)["top1"] < BM["top1"] - 0.1 for a in cheap), "cheap shortcuts are clearly worse")
-check(bench("random", "certified_rows_y", "lowrank")["top1"] > lr["top1"], "certified_rows_y helps on low rank")
+check(bench("random", "certified_rows_y", "lowrank")["top1"] > bench("random", M, "lowrank")["top1"],
+      "certified_rows_y helps on low rank")
 check(big["certified agrees"] == "yes", "certified agrees on the largest matrix")
 w_oc, w_ma = bench("random", "exhaustive_w", "outlier_chan")["top1"], bench("random", "exhaustive_w", "massive")["top1"]
 bullets([
@@ -1110,14 +1196,17 @@ bullets([
     f"from {pct(BM['top1'])} to {pct(we['top1'])}, and to {pct(w_oc, 0)} with outlier channels and {pct(w_ma, 0)} "
     "with massive activations.",
     "**Mantissa resolution matters.** With 1 slice per octave agreement drops to "
-    f"{pct(bench('random', 'sketch_nb1_h')['top1'])}, with 4 to {pct(bench('random', 'sketch_nb4_h')['top1'])}. "
-    f"16 slices are as good as 64 on the random suite, but not exact: on the adversarial suite they reach "
-    f"{pct(adv_16)} against {pct(adv_m)}.",
+    f"{pct(bench('random', 'sketch_nb1_h')['top1'])}, with 4 to {pct(bench('random', 'sketch_nb4_h')['top1'])} and "
+    f"with 16 to {pct(bench('random', 'sketch_nb16_h')['top1'])}, against {pct(BM['top1'])} with 64. With 64 slices every rounding midpoint and "
+    "saturation point of the five candidates lies on a slice boundary (they all lie on multiples of 1/32 of an "
+    "octave), which is what makes the sketch exact; with 16 or fewer, some slices straddle a midpoint.",
     f"**Several methods are as accurate, none is clearly better.** With {N_RANDOM} matrices, top-1 agreement has a "
     f"standard error of about {100 * se:.1f} points. Within two standard errors of the chosen method are "
     + ", ".join(f"`{a}` ({pct(bench('random', a)['top1'])}, {f2(bench('random', a)['ms'])} ms)" for a in close)
-    + f". All of them are slower than the chosen method ({f2(BM['ms'])} ms) except the coarser sketches with 4 and "
-    "16 slices, which are not exact.",
+    + f". All of them are slower than the chosen method ({f2(BM['ms'])} ms)"
+    + (" except the coarser sketch" + ("es" if len(close_coarse) > 1 else "") + " with "
+       + " and ".join(a.split("nb")[1].split("_")[0] for a in close_coarse) + " slices, which "
+       + ("are" if len(close_coarse) > 1 else "is") + " not exact." if close_coarse else "."),
     "**Cheap shortcuts are not good enough.** The two-statistic closed form, the learned tree, a Gaussian fit and "
     "the ANT-style shape rule are right in "
     + ", ".join(pct(bench('random', a)['top1'], 0) for a in cheap) + " of cases respectively.",
@@ -1152,17 +1241,17 @@ H("7.1 Outliers", 2)
 cont = {k: v for k, v in OUT_T.items() if "continuous" in k}
 low = [v for k, v in cont.items() if any(f", {s}σ" in k for s in (5, 10, 20))]
 check(all(v["winner ocp (seeds), margin pp"].startswith("E2M3 (10/10)") for v in low), "E2M3 wins every cell up to 20σ")
-hi = [v for k, v in cont.items() if ", 100σ" in k]
-check(all(winner_of(v["winner ocp (seeds), margin pp"]) == "BFP6" for v in hi), "BFP6 wins every cell at 100σ")
 low_w = [v for k, v in OUT_W.items() if "continuous" in k and any(f", {s}σ" in k for s in (5, 10, 20))]
 check(all(v["winner ocp (seeds), margin pp"].startswith("E2M3 (10/10)") for v in low_w), "weights only: same up to 20σ")
 sel = ["100, 5σ, continuous", "100, 20σ, continuous", "100, 50σ, continuous", "100, 100σ, continuous",
        "400, 20σ, continuous", "100, 20σ, exact", "100, 50σ, exact"]
-table(["n, k, magnitudes", "Blocks with an outlier", "E3M2", "E2M3", "MXINT6", "BFP6", "Winner (seeds), margin pp"],
+table(["n, k, magnitudes", "Blocks with an outlier", "E3M2", "E2M3", "MXINT6", "BFP6", "Winner (seeds), margin pp",
+       "BFP 16|4|5 (comparison)"],
       [[s, OUT_T[s]["blocks with an outlier"], OUT_T[s]["E3M2"], OUT_T[s]["E2M3"], OUT_T[s]["MXINT6"], OUT_T[s]["BFP6"],
-        OUT_T[s]["winner ocp (seeds), margin pp"]] for s in sel],
+        OUT_T[s]["winner ocp (seeds), margin pp"], OUT_T[s][CMPC]] for s in sel],
       cap="n weights of W_[C] replaced by ±k·σ·U(0.7, 1.3) (continuous magnitudes); the last two rows use exact "
-          "magnitudes k·σ. W+X held-out e_[Y] (%), class rule.")
+          "magnitudes k·σ. W+X held-out e_[Y] (%), class rule. Last column: BFP with groups of 16, for comparison "
+          "only (not a candidate, never counted as the winner).", size=8.5)
 mf = MECH["flushed to 0"]
 ex20, ex50, co20 = OUT_T["100, 20σ, exact"], OUT_T["100, 50σ, exact"], OUT_T["100, 20σ, continuous"]
 check(num(ex20["E3M2"]) < num(co20["E3M2"]) - 1 and num(ex50["E2M3"]) > num(OUT_T["100, 50σ, continuous"]["E2M3"]) + 0.3,
@@ -1170,15 +1259,23 @@ check(num(ex20["E3M2"]) < num(co20["E3M2"]) - 1 and num(ex50["E2M3"]) > num(OUT_
 w_ex = OUT_W["100, 20σ, exact"]
 w_ex_e3 = num(w_ex["E3M2"]) < num(w_ex["E2M3"])
 s100 = [seeds(v["winner ocp (seeds), margin pp"]) for v in hi]
+m100 = [margin(v["winner ocp (seeds), margin pp"]) for v in hi]
+m_peak = max(cont, key=lambda k: margin(cont[k]["winner ocp (seeds), margin pp"]))
+c100 = OUT_T["100, 100σ, continuous"]
 bullets([
-    f"**Up to 20σ, E2M3 wins every case in 10 of 10 seeds**, even with an outlier in "
-    f"{OUT_T['400, 20σ, continuous']['blocks with an outlier']} of the blocks. At 50σ it is a near tie with BFP6; "
-    f"at 100σ BFP6 wins on average for every number of outliers (in {min(s100)} to {max(s100)} of 10 seeds).",
+    f"**E2M3 wins every outlier case**: up to 20σ in 10 of 10 seeds, even with an outlier in "
+    f"{OUT_T['400, 20σ, continuous']['blocks with an outlier']} of the blocks, and at 100σ in {min(s100)} to "
+    f"{max(s100)} of 10 seeds. Its lead first grows (largest at {m_peak}: "
+    f"{margin(cont[m_peak]['winner ocp (seeds), margin pp']):.2f} pp) and then shrinks to {min(m100):.2f}–"
+    f"{max(m100):.2f} pp at 100σ.",
     f"**Mechanism: an outlier sets its block's scale, so its neighbours get a coarse grid.** With 100 outliers at "
     f"20σ, E2M3 flushes {mf['E2M3']} weights to zero (against {T6['MXFP6_E2M3']['zeroed']} without outliers), "
     f"MXINT6 {mf['MXINT6']} and BFP6 {mf['BFP6']}. At 100σ every format flushes the outlier's neighbours, so the "
-    "error is roughly the energy of the neighbours that share its block: 15 values in a BFP6 group, 31 in an MX "
-    "block. That is why BFP6's shorter groups win there.",
+    "error is roughly the energy of the 31 neighbours that share its block, and the formats move closer together.",
+    "**Shorter groups would change the answer here.** BFP with groups of 16 (16|4|5, the last column) has only 15 "
+    f"neighbours per outlier, and at 100σ it beats E2M3 in every row (for example {c100[CMPC]}% against "
+    f"{c100['E2M3']}% at 100 × 100σ). It costs {float(G16['bits/elem']) - float(T2['BFP6']['bits/elem']):.2f} more "
+    "bits per element than our BFP6 and is not one of the candidates.",
     f"**E3M2 never wins with continuous magnitudes.** It keeps the most neighbours ({mf['E3M2']} flushed), but its "
     "top binade is twice as coarse (2 mantissa bits instead of 3), and the outliers themselves carry most of the "
     "energy.",
@@ -1191,46 +1288,62 @@ bullets([
 figure("fig8_q3_outliers.png", "W+X: gap of E3M2 and BFP6 to E2M3 against the share of blocks containing an "
        "outlier, for outliers of 5σ, 20σ and 100σ. Above zero, E2M3 is better.", width=12)
 H("7.2 Sparsity", 2)
-sp = ["0%", "30%", "40%", "50%", "75%", "95%"]
-table(["Zeros", "E3M2", "E2M3", "MXINT6", "BFP6", "Winner (seeds), margin pp", "ρ_[16]", "φ"],
+sp = [z for z in SPARSE_M if z in SPARSE]
+table(["Zeros", "E3M2", "E2M3", "MXINT6", "BFP6", "Winner (seeds), margin pp", "ρ_[32]", "φ",
+       "BFP 16|4|5 (comparison)", "ρ_[16]"],
       [[z, SPARSE[z]["E3M2"], SPARSE[z]["E2M3"], SPARSE[z]["MXINT6"], SPARSE[z]["BFP6"],
-        SPARSE[z]["winner ocp (seeds), margin pp"], SPARSE_M.get(z, {}).get("ρ16", "–"), SPARSE_M.get(z, {}).get("φ", "–")]
-       for z in sp],
-      cap="A share of W_[C]'s weights set to zero at random positions. W+X held-out e_[Y] (%), class rule; ρ_[16] and "
-          "φ are the statistics explained below.")
-check(SPARSE["50%"]["winner ocp (seeds), margin pp"].startswith("BFP6 (10/10)"), "BFP6 wins 10/10 at 50% zeros")
-check(SPARSE_W["50%"]["winner ocp (seeds), margin pp"].startswith("BFP6 (10/10)"), "weights only: BFP6 wins at 50%")
-mx_cross = next((z for z in SPARSE if num(SPARSE[z]["MXINT6"]) < num(SPARSE[z]["E2M3"])), None)
+        SPARSE[z]["winner ocp (seeds), margin pp"], SPARSE_M[z]["ρ32"], SPARSE_M[z]["φ"], SPARSE[z][CMPC],
+        SPARSE_M[z]["ρ16"]] for z in sp],
+      cap="A share of W_[C]'s weights set to zero at random positions. W+X held-out e_[Y] (%), class rule; ρ and φ "
+          "are the statistics explained below. The last two columns are BFP with groups of 16, for comparison only.",
+      size=7.5)
+sp_w_lose = [z for z in SPARSE_W if winner_of(SPARSE_W[z]["winner ocp (seeds), margin pp"]) != "E2M3"]
+sp_w_cross = min(sp_w_lose, key=num)
+check(all(margin(SPARSE_W[z]["winner ocp (seeds), margin pp"]) < 0.05 for z in sp_w_lose),
+      "weights only: the integer formats win by a hair past the crossover")
+cmp_cross = next(z for z in sorted(SPARSE, key=num) if num(SPARSE[z][CMPC]) < num(SPARSE[z]["E2M3"]))
+check(all(num(SPARSE[z][CMPC]) < num(SPARSE[z]["E2M3"]) for z in SPARSE if num(z) >= num(cmp_cross)),
+      "BFP 16|4|5 beats E2M3 from cmp_cross on")
+sgap = lambda z: num(SPARSE[z]["E2M3"]) - num(SPARSE[z]["MXINT6"])                      # noqa: E731
 bullets([
-    f"**E2M3 stays almost flat** ({SPARSE['0%']['E2M3']}% → {SPARSE['95%']['E2M3']}%) while **BFP6 falls steadily** "
-    f"({SPARSE['0%']['BFP6']}% → {SPARSE['95%']['BFP6']}%). They tie at 40% zeros "
-    f"({SPARSE['40%']['winner ocp (seeds), margin pp']}), and BFP6 wins in every seed from 50% on."
-    + (f" MXINT6 overtakes E2M3 only at {mx_cross}." if mx_cross else ""),
+    f"**E2M3 stays almost flat** ({SPARSE['0%']['E2M3']}% → {SPARSE['95%']['E2M3']}%) while **the integer grids fall "
+    f"steadily** (BFP6 {SPARSE['0%']['BFP6']}% → {SPARSE['95%']['BFP6']}%). E2M3 wins in every seed up to {sp_all} "
+    f"zeros, but its lead shrinks from {margin(SPARSE['0%']['winner ocp (seeds), margin pp']):.2f} pp to "
+    f"{margin(SPARSE[max(sp_win, key=num)]['winner ocp (seeds), margin pp']):.2f} pp at {max(sp_win, key=num)}. From "
+    f"{sp_cross} zeros MXINT6 wins, {f2(sgap(sp_cross))} pp ahead of E2M3 at {sp_cross} and {f2(sgap('95%'))} pp at "
+    "95%, with BFP6 within 0.01 pp of MXINT6. With weights only the crossover comes earlier, at "
+    f"{sp_w_cross} zeros.",
     "**Mechanism.** An FP grid's error is relative to each value's own binade, so it is proportional to "
     "φ = Σ 4^[floor(log₂|w|)] / Σ w^[2], which does not depend on sparsity "
     f"({SPARSE_M['0%']['φ']} at every level). An integer grid's step is set by each block's maximum, so its error "
-    "is proportional to ρ = Σ_[blocks] n_[nz]·4^[F] / Σ w^[2] (n_[nz] non-zero values in a block whose maximum lies "
-    f"in binade F). The maximum of fewer non-zero values is smaller relative to their energy, so ρ falls with "
-    f"sparsity: for 16-value groups from {SPARSE_M['0%']['ρ16']} to {SPARSE_M['40%']['ρ16']} at 40% and "
-    f"{SPARSE_M['80%']['ρ16']} at 80% zeros. BFP6 overtakes before MXINT6 because 16-value groups have smaller "
-    "maxima than 32-value blocks.",
+    "is proportional to ρ = Σ_[blocks] n_[nz]·4^[R] / Σ w^[2] (n_[nz] non-zero values in a block whose maximum lies "
+    f"in binade R). The maximum of fewer non-zero values is smaller relative to their energy, so ρ falls with "
+    f"sparsity: for blocks of 32 from {SPARSE_M['0%']['ρ32']} to {SPARSE_M['50%']['ρ32']} at 50% and "
+    f"{SPARSE_M['95%']['ρ32']} at 95% zeros.",
+    f"**Group length matters again.** Groups of 16 have smaller maxima, so ρ_[16] is lower at every level "
+    f"({SPARSE_M['0%']['ρ16']} with no zeros), and the BFP 16|4|5 comparison beats E2M3 from {cmp_cross} zeros on.",
 ])
 figure("fig9_q3_sparsity.png", "W+X: held-out error against the share of weights set to zero (mean and spread over "
-       "10 seeds).", width=12)
+       "10 seeds). BFP6 and MXINT6 lie on top of each other; the dashed line is BFP with groups of 16, for "
+       "comparison only.", width=12)
 H("7.3 Variation in scale", 2)
+WEAK = next(k for k in SCALEV[0] if k.startswith("weak-25% error"))
+weak = lambda r, i: r[WEAK].split("/")[i].strip()                                      # noqa: E731
 table(["Gain spread", "E3M2", "E2M3", "E4M1", "MXINT6", "BFP6", "Winner (seeds)",
        "Weakest 25%: E3M2 / E2M3 / E4M1 / MXINT6 / BFP6", "BFP6 clamped groups"],
       [[r["spread"], r["E3M2"], r["E2M3"], r["E4M1"], r["MXINT6"], r["BFP6"], r["winner ocp (seeds), margin pp"],
-        r["weak-25% error: E3M2 / E2M3 / E4M1 / MXINT6 / BFP6"], r["BFP6 clamped blocks"]] for r in SCALEV],
+        " / ".join(weak(r, i) for i in range(5)), str(clamp32(r))] for r in SCALEV],
       cap="Random gains 10^[U(−a, a)] per output row or per input column. W+X global held-out e_[Y] (%), and the "
-          "error of the part of Y that comes from the weakest 25% of rows or input channels.", size=7.5)
+          f"error of the part of Y that comes from the weakest 25% of rows or input channels. BFP6 has {N_GROUPS} "
+          "groups.", size=7.5)
 check(all(winner_of(r["winner ocp (seeds), margin pp"]) == "E2M3" for r in SCALEV), "E2M3 wins globally at every spread")
-weak = lambda r, i: r["weak-25% error: E3M2 / E2M3 / E4M1 / MXINT6 / BFP6"].split("/")[i].strip()   # noqa: E731
 check(all(r["weak-25% winner"] == "E4M1" for r in col_rows[2:]), "E4M1 keeps the weakest channels from 10^3")
 bullets([
     "**Gains per output row** are absorbed by the block scale, because every block lies inside one row: the MX "
-    f"formats barely change. BFP6 does: at a spread of 10^[4], {row10k['BFP6 clamped blocks']} of its 700 groups "
-    f"leave the range of its 4-bit exponent and its error jumps to {row10k['BFP6']}%.",
+    f"formats barely change. BFP6 does: at a spread of 10^[4], {clamp32(row10k)} of its {N_GROUPS} groups "
+    "leave the range of its 4-bit exponent. They are the groups of the rows with the largest gains, whose values "
+    "saturate at 248, and those rows carry most of Y, so BFP6's error jumps to "
+    f"{row10k['BFP6']}%.",
     "**Gains per input column** change the values inside every block. The global error still selects E2M3 at every "
     f"spread, because with a nearly white X the weak channels contribute little to Y.",
     "**Judged on the weakest channels, the ranking flips** to the formats with many exponent bits. The block scale "

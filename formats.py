@@ -1,4 +1,4 @@
-"""6-bit candidate formats for CS611 A1, Group 8 (dataset C).   Version 2.2 (24 Oct: A5 revised; A17 literal ceil).
+"""6-bit candidate formats for CS611 A1, Group 8 (dataset C).   Version 3.0 (25 Oct: BFP6 = 32|4|5).
 
 Conventions. [CLASS] = Lecture 19 OCP-MX notebook / board notes; [An] = our assumption An,
 listed with its reason in Section 2.4 of the report.
@@ -28,13 +28,14 @@ listed with its reason in Section 2.4 of the report.
   MXINT6      S I F F F F: k * 2^-4, two's complement k in [-32, 31] (class INT notes),
               vmax = 31/16 (most negative -2), emax_elem = 0, S = 2^floor(log2 amax)
                                                         [board notes; A5, revised 23 Oct]
-  BFP6        g|e|m = 16|4|5: groups of 16, ONE 4-bit shared exponent E = floor(log2 amax)
+  BFP6        g|e|m = 32|4|5: groups of 32, ONE 4-bit shared exponent E = floor(log2 amax)
               clamped to [-8, 7], sign + 5-bit magnitude M in [0, 31], value = +-M * 2^(E-4),
               RNE, saturate at M = 31.                                         [A6]
 
   Variants (VARIANTS; sensitivity rows, never in the main ranking):
   MXFP6_E4M1_v192  top exponent code reserved (IEEE-like) -> emax=7, vmax=192     [A4]
   MXFP6_E4M1_nan1  one NaN code (E4M3-style, S.1111.1) -> emax=8, vmax=256        [A4]
+  BFP6_g16         BFP 16|4|5: groups of 16, otherwise as BFP6 (6.28 bits/elem)  [A6]
   BFP6_g32e8       BFP 32|8|5, floor rule: numerically IDENTICAL to MXINT6_sym    [A6]
   BFP6_b32_ceil    v1's BFP6: block 32, 8-bit exponent, "ceil" rule (= MXINT6_sym under ceil)
   BFP6_row         one block per row, 8-bit exponent, "ceil" rule (6.08 bits/elem)
@@ -72,7 +73,7 @@ except ImportError:                     # pragma: no cover
     def tqdm(it, **_):
         return it
 
-FORMATS_VERSION = "v2.2"
+FORMATS_VERSION = "v3.0"
 BLOCK = 32
 E8M0_MIN, E8M0_MAX = -127, 127
 OPT_OFFSETS = (-2, -1, 0, 1)
@@ -126,6 +127,7 @@ FORMATS = {
 VARIANTS = {
     "MXFP6_E4M1_v192": ("fp", dict(ebits=4, mbits=1, bias=7, maxval=192.0), 7),
     "MXFP6_E4M1_nan1": ("fp", dict(ebits=4, mbits=1, bias=7, maxval=256.0), 8),
+    "BFP6_g16":        ("bfp", dict(kmax=31), 4),
     "BFP6_g32e8":      ("bfp", dict(kmax=31), 4),
     "BFP6_b32_ceil":   ("bfp", dict(kmax=31), 4),
     "BFP6_row":        ("bfp", dict(kmax=31), 4),
@@ -139,7 +141,8 @@ VARIANTS = {
 #   field       range of the stored exponent field (clamped)
 LAYOUT_DEFAULT = dict(block=BLOCK, policy="ocp", scale_bits=8, field=(E8M0_MIN, E8M0_MAX))
 LAYOUT = {
-    "BFP6":          dict(block=16, scale_bits=4, field=(-8, 7)),          # A6: 16|4|5
+    "BFP6":          dict(block=32, scale_bits=4, field=(-8, 7)),          # A6: 32|4|5
+    "BFP6_g16":      dict(block=16, scale_bits=4, field=(-8, 7)),          # 16|4|5, comparison row
     "BFP6_b32_ceil": dict(policy="ceil"),
     "BFP6_row":      dict(block="row", policy="ceil"),
 }

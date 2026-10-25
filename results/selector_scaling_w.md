@@ -3,9 +3,9 @@ Selection cost vs matrix size. LLM-like W (Student-t4 x 0.02, 1% of input channe
 
 | size | weights | brute force (s) | exact sketch (s) | certified IS (s) | blocks rounded by certified | certified? | winner | sketch agrees | certified agrees | margin to 2nd (dB) |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 128x128 | 16,384 | 0.002 | 0.007 | 0.005 | 42 of 512 (8.20%) | yes | MXFP6_E2M3 | yes | yes | 1.45 |
-| 256x256 | 65,536 | 0.009 | 0.003 | 0.001 | 60 of 2,048 (2.93%) | yes | MXFP6_E2M3 | yes | yes | 1.78 |
-| 512x512 | 262,144 | 0.039 | 0.021 | 0.007 | 64 of 8,192 (0.78%) | yes | MXFP6_E2M3 | yes | yes | 1.98 |
-| 1024x1024 | 1,048,576 | 0.111 | 0.077 | 0.023 | 918 of 32,768 (2.80%) | yes | MXFP6_E2M3 | yes | yes | 0.34 |
-| 2048x2048 | 4,194,304 | 0.530 | 0.351 | 0.029 | 250 of 131,072 (0.19%) | yes | MXFP6_E2M3 | yes | yes | 0.90 |
-| 4096x4096 | 16,777,216 | 1.980 | 2.060 | 0.161 | 506 of 524,288 (0.10%) | yes | MXFP6_E2M3 | yes | yes | 0.91 |
+| 128x128 | 16,384 | 0.002 | 0.006 | 0.006 | 20 of 512 (3.91%) | yes | MXFP6_E2M3 | yes | yes | 2.98 |
+| 256x256 | 65,536 | 0.005 | 0.002 | 0.001 | 60 of 2,048 (2.93%) | yes | MXFP6_E2M3 | yes | yes | 2.95 |
+| 512x512 | 262,144 | 0.020 | 0.010 | 0.003 | 64 of 8,192 (0.78%) | yes | MXFP6_E2M3 | yes | yes | 3.26 |
+| 1024x1024 | 1,048,576 | 0.086 | 0.043 | 0.006 | 31 of 32,768 (0.09%) | yes | MXFP6_E2M3 | yes | yes | 3.11 |
+| 2048x2048 | 4,194,304 | 0.440 | 0.238 | 0.026 | 64 of 131,072 (0.05%) | yes | MXFP6_E2M3 | yes | yes | 3.30 |
+| 4096x4096 | 16,777,216 | 1.875 | 1.787 | 0.131 | 64 of 524,288 (0.01%) | yes | MXFP6_E2M3 | yes | yes | 3.41 |

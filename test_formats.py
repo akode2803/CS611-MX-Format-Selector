@@ -123,7 +123,7 @@ def test_all_zero_block_scale_one():
 
 def test_exponent_field_clamped():
     # v2: the stored shared-exponent field must stay in its own range:
-    # E8M0 [-127, 127] for MX and 8-bit BFP, [-8, 7] for BFP6 16|4|5.
+    # E8M0 [-127, 127] for MX and 8-bit BFP, [-8, 7] for BFP6 32|4|5 and 16|4|5.
     W = np.array([[2.0 ** -200] * 32, [2.0 ** 200] * 32])
     for n in ALL:
         lo, hi = layout(n)["field"]
@@ -159,7 +159,7 @@ def test_one_ulp_below_power_of_two():
     # E2M3, block max 8 - ulp: scale 1 (not 2), so the max saturates to 7.5
     assert quantize(row(np.nextafter(8.0, 0)), "MXFP6_E2M3")[0][0, 0] == 7.5
     # ceil: a max one ulp above vmax * 2^k must move to the next scale (nothing clipped)
-    # v2: BFP6 16|4|5 has a 4-bit exponent (E <= 7), so its largest value is 31 * 2^(7-4) = 248;
+    # BFP6 32|4|5 has a 4-bit exponent (E <= 7), so its largest value is 31 * 2^(7-4) = 248;
     # beyond that even "ceil" must clip (k = 3 here needs E = 8). Checked separately below.
     for n in ["MXFP6_E2M3", "MXINT6", "BFP6"]:
         kind, p, _ = spec(n)
@@ -206,11 +206,13 @@ def test_ceil_never_saturates_and_opt_never_worse():
 
 
 def test_bfp6_variants_vs_mxint6():
-    # v2 (A6): BFP6 is now 16|4|5 and is NOT MXINT6. The old block-32 "ceil" BFP6 is kept
-    # as BFP6_b32_ceil and is still identical to symmetric MXINT6 under ceil (documented equivalence).
+    # v3 (A6): BFP6 is 32|4|5. Inside its 4-bit exponent range it equals symmetric MXINT6; the 16|4|5
+    # comparison row does not. The old block-32 "ceil" BFP6 is kept as BFP6_b32_ceil and is still
+    # identical to symmetric MXINT6 under ceil (documented equivalence).
     W = rng.standard_normal((40, 100))
     assert np.array_equal(quantize(W, "BFP6_b32_ceil")[0], quantize(W, "MXINT6_sym", policy="ceil")[0])
-    assert not np.array_equal(quantize(W, "BFP6")[0], quantize(W, "MXINT6")[0])
+    assert np.array_equal(quantize(W, "BFP6")[0], quantize(W, "MXINT6_sym")[0])
+    assert not np.array_equal(quantize(W, "BFP6_g16")[0], quantize(W, "MXINT6_sym")[0])
     # the whole-row variant is genuinely different
     assert not np.array_equal(quantize(W, "BFP6_row")[0], quantize(W, "MXINT6")[0])
     assert quantize(W, "BFP6_row")[1].shape == (40, 1)
@@ -240,29 +242,35 @@ def test_exhaustive_and_checkpoint(tmp=None):
     assert len(ranking(rows)) == 5
 
 
-# ---------------------------------------------------------------- v2: BFP6 = 16|4|5 (A6)
+# ---------------------------------------------------------------- v3: BFP6 = 32|4|5, 16|4|5 for comparison (A6)
 def test_v2_bfp6_layout_and_hand_example():
-    lay = layout("BFP6")
-    assert lay["block"] == 16 and lay["scale_bits"] == 4 and lay["field"] == (-8, 7) and lay["policy"] == "ocp"
+    for name, block, nblk in (("BFP6", 32, 4), ("BFP6_g16", 16, 7)):
+        lay = layout(name)
+        assert lay["block"] == block and lay["scale_bits"] == 4 and lay["field"] == (-8, 7) and lay["policy"] == "ocp"
+        _bfp_hand_example(name, block, nblk)
+
+
+def _bfp_hand_example(name, block, nblk):
     # Block 0 (cols 0-15): max 3.0 -> stored exponent E = floor(log2 3) = 1, step 2^(1-4) = 0.125.
     #   3.0    -> 24 * 0.125 = 3.0 (exact)
     #   1.0625 -> 8.5 steps, a tie -> even code 8 -> 1.0
     #   1.1875 -> 9.5 steps, a tie -> even code 10 -> 1.25
     #   0.05   -> 0.4 steps -> 0 (zeroed)
-    # Block 1 (cols 16-31): max 3.99 -> E = 1, 31.92 steps -> 32 -> saturates to 31 -> 3.875
+    # Col 16: -3.99 -> E = 1, 31.92 steps -> 32 -> saturates to 31 -> 3.875 (with groups of 16 it is
+    #   the max of block 1; with groups of 32 it is the max of block 0, so E = 1 there too)
     #   (the class floor rule clips the block max, exactly as MXINT6 does)
     w = np.zeros((1, 100))
     w[0, :4] = [3.0, 1.0625, 1.1875, 0.05]
     w[0, 16] = -3.99
     w[0, 96:] = [0.5, 0.25, 0.0, -0.125]           # tail block of 4: E = -1, step 2^-5
-    Wq, e, st = quantize(w, "BFP6", return_stats=True)
-    assert e.shape == (1, 7)                       # 6 blocks of 16 + a tail of 4
+    Wq, e, st = quantize(w, name, return_stats=True)
+    assert e.shape == (1, nblk)                    # full blocks + a tail of 4
     assert list(Wq[0, :4]) == [3.0, 1.0, 1.25, 0.0]
     assert Wq[0, 16] == -3.875
     assert list(Wq[0, 96:]) == [0.5, 0.25, 0.0, -0.125]
-    assert e[0, 0] == 1 and e[0, 1] == 1 and e[0, 6] == -1 and e[0, 2] == 0   # all-zero block -> 0
+    assert e[0, 0] == 1 and e[0, 16 // block] == 1 and e[0, nblk - 1] == -1 and e[0, 2] == 0   # all-zero -> 0
     assert st["n_zeroed"] == 1 and st["n_range"] == 1 and st["n_saturated"] == 1
-    k = Wq[0, :16] / 2.0 ** (e[0, 0] - 4)
+    k = Wq[0, :block] / 2.0 ** (e[0, 0] - 4)
     assert np.array_equal(k, np.round(k)) and np.abs(k).max() <= 31
 
 
@@ -272,11 +280,12 @@ def test_v2_bfp6_4bit_exponent_clamp():
     w = np.zeros((2, 16))
     w[0, 0], w[0, 1] = 2.0 ** 10, 3.0
     w[1, 0] = 2.0 ** -14
-    Wq, e, st = quantize(w, "BFP6", return_stats=True)
-    assert e[0, 0] == 7 and e[1, 0] == -8
-    assert Wq[0, 0] == 248.0 and Wq[0, 1] == 0.0   # 3 / 8 = 0.375 steps -> 0
-    assert Wq[1, 0] == 0.0
-    assert st["n_scale_clamped"] == 2
+    for name in ("BFP6", "BFP6_g16"):
+        Wq, e, st = quantize(w, name, return_stats=True)
+        assert e[0, 0] == 7 and e[1, 0] == -8
+        assert Wq[0, 0] == 248.0 and Wq[0, 1] == 0.0   # 3 / 8 = 0.375 steps -> 0
+        assert Wq[1, 0] == 0.0
+        assert st["n_scale_clamped"] == 2
     # the 8-bit-exponent variants do not clamp here
     assert quantize(w, "BFP6_g32e8", return_stats=True)[2]["n_scale_clamped"] == 0
 
@@ -296,7 +305,8 @@ def test_v2_bfp6_on_dataset_C():
     W, X = load_C()
     if W is None:
         return
-    assert abs(yerr(W, X, "BFP6") - 3.46) < 0.006                # plan A6 prototype value
+    assert abs(yerr(W, X, "BFP6_g16") - 3.46) < 0.006            # the 16|4|5 prototype value
+    assert yerr(W, X, "BFP6") == yerr(W, X, "MXINT6_sym")         # no group of C reaches the 4-bit limits
     assert abs(yerr(W, X, "BFP6_g32e8") - yerr(W, X, "MXINT6_sym")) == 0
 
 
@@ -351,15 +361,15 @@ def test_ceil_two_complement_negative_max_fits_minus_32():
 
 def test_v2_true_storage_per_format():
     expect = {n: 6.32 for n in FORMATS}
-    expect.update({"BFP6": 6.28, "BFP6_g32e8": 6.32, "BFP6_b32_ceil": 6.32, "BFP6_row": 6.08,
+    expect.update({"BFP6": 6.16, "BFP6_g16": 6.28, "BFP6_g32e8": 6.32, "BFP6_b32_ceil": 6.32, "BFP6_row": 6.08,
                    "MXFP6_E4M1_v192": 6.32, "MXFP6_E4M1_nan1": 6.32, "MXINT6_sym": 6.32})
     for n in ALL:
         total, per = format_storage(n, 100, 100)
         assert abs(per - expect[n]) < 1e-12, (n, per)
         st = quantize(rng.standard_normal((100, 100)), n, return_stats=True)[2]
         assert abs(st["bits_per_elem"] - expect[n]) < 1e-12, n
-    # BFP6 16|4|5 by hand: 7 blocks per row x 4 bits = 28, (600 + 28) / 100 = 6.28
-    assert format_storage("BFP6", 1, 100)[0] == 628
+    # BFP6 32|4|5 by hand: 4 blocks per row x 4 bits = 16, (600 + 16) / 100 = 6.16; 16|4|5: 7 x 4 = 28 -> 6.28
+    assert format_storage("BFP6", 1, 100)[0] == 616 and format_storage("BFP6_g16", 1, 100)[0] == 628
 
 
 # ---------------------------------------------------------------- v2: W+X mode (A8)

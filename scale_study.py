@@ -26,7 +26,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CANDIDATES = list(S.FMTS)
 EXTRA = list(S.VARIANTS)
 SHORT = {"MXFP6_E3M2": "E3M2", "MXFP6_E2M3": "E2M3", "MXFP6_E4M1": "E4M1", "MXINT6": "MXINT6",
-         "BFP6": "BFP6 16|4|5", "MXFP6_E4M1_v192": "E4M1 v192", "MXFP6_E4M1_nan1": "E4M1 one-NaN",
+         "BFP6": "BFP6 32|4|5", "BFP6_g16": "BFP6 16|4|5", "MXFP6_E4M1_v192": "E4M1 v192", "MXFP6_E4M1_nan1": "E4M1 one-NaN",
          "BFP6_g32e8": "BFP6 32|8|5 (= MXINT6_sym)", "BFP6_b32_ceil": "BFP6 32 ceil (v1)",
          "MXINT6_sym": "MXINT6_sym [-31, 31]"}
 POLICIES = [  # name, how, roundings per weight, what it is
@@ -144,8 +144,9 @@ def crosscheck(datasets, md):
     if not v2:
         repo_of["BFP6_b32_ceil"], repo_of["BFP6"] = "BFP6", None    # v1 called the old BFP6 "BFP6"
     pairs = [(n, repo_of[n], None, n.startswith("BFP")) for n in CANDIDATES + EXTRA if repo_of.get(n)]
-    if repo_of.get("MXINT6_sym"):                       # A6 BFP6 = symmetric MXINT6 grid in blocks of 16
-        pairs.append(("BFP6", repo_of["MXINT6_sym"], 16, False))
+    if repo_of.get("MXINT6_sym"):                       # BFP = symmetric MXINT6 grid in its own groups
+        pairs.append(("BFP6", repo_of["MXINT6_sym"], 32, False))
+        pairs.append(("BFP6_g16", repo_of["MXINT6_sym"], 16, False))
     checks = [("ocp", dict(policy="ocp"), dict(policy="ocp")),
               ("ceil", dict(policy="ceil"), dict(policy="ceil")),
               ("opt", dict(policy="opt"), dict(policy="opt")),
@@ -192,8 +193,8 @@ def crosscheck(datasets, md):
               + (f"; not in this formats.py: {', '.join(missing)}" if missing else "") + ". Exponents are compared "
               "on non-zero blocks (an all-zero block gets exponent 0 in both); for the BFP rows only up to a "
               "constant offset (formats.py v1 stored the exponent of the integer code, 4 lower than mine; v2 stores "
-              "the same E). The `BFP6 | ... block=16` rows compare A6 BFP6 with the symmetric MXINT6 grid in blocks "
-              "of 16 and skip matrices where the 4-bit exponent clamp [-8, 7] could bind (every block exponent must "
+              "the same E). The `BFP6 | ... block=32` and `BFP6_g16 | ... block=16` rows compare BFP with the symmetric "
+              "MXINT6 grid in blocks of the same length and skip matrices where the 4-bit exponent clamp [-8, 7] could bind (every block exponent must "
               "be at least 3 from the limits). Signed zeros are not counted: an integer code has one zero, so "
               "`scale_opt.py` decodes MXINT6 to +0 where formats.py returns -0.\n")
     tc_ceil = [r for r in md if r.startswith("| MXINT6 | ") and " | ceil | " in r]
@@ -235,7 +236,7 @@ def crosscheck(datasets, md):
 REF_NAME = {"MXFP6_E3M2": "MXFP_E3M2", "MXFP6_E2M3": "MXFP_E2M3", "MXFP6_E4M1": "MXFP_E4M1",
             "MXINT6": "MXINT6_twos", "BFP6": "BFP6", "MXFP6_E4M1_v192": "MXFP_E4M1_reserved",
             "MXFP6_E4M1_nan1": "MXFP_E4M1_onenan", "MXINT6_sym": "MXINT6",
-            "BFP6_g32e8": "BFP6_32_8_floor", "BFP6_b32_ceil": "BFP6_32_8_ceil"}
+            "BFP6_g32e8": "BFP6_32_8_floor", "BFP6_b32_ceil": "BFP6_32_8_ceil", "BFP6_g16": "BFP6_16_4"}
 
 
 def reference_check(W, md):

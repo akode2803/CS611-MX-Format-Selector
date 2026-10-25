@@ -8,7 +8,8 @@ columns; --mode w: weights only.
 K = 100, so only the number of blocks per row sets the cost: block lengths 25-33 all mean 4
 scales per row. Each format pays its own scale width: 8 bits (E8M0) for the MX formats, 4 bits
 for BFP (g|4|5). bits/element = 6 + (blocks per row) * scale_bits / 100. The class MX block is
-32 (4 blocks/row, 6.32 bits); BFP6 16|4|5 has 7 blocks/row (6.28 bits). Held-out Y error, ocp
+32 (4 blocks/row, 6.32 bits); BFP6 32|4|5 also has 4 blocks/row (6.16 bits), and the 16|4|5
+comparison layout 7 (6.28 bits). Held-out Y error, ocp
 and opt.  The second table compares formats at EQUAL storage, which is the fair comparison.
 """
 import argparse
@@ -28,7 +29,8 @@ NAMES = list(FORMATS)
 SHORT = {"MXFP6_E3M2": "E3M2", "MXFP6_E2M3": "E2M3", "MXFP6_E4M1": "E4M1", "MXINT6": "MXINT6", "BFP6": "BFP6"}
 COL = {"MXFP6_E2M3": "#2a78d6", "BFP6": "#eb6834", "MXINT6": "#1baf7a", "MXFP6_E3M2": "#eda100", "MXFP6_E4M1": "#e87ba4"}
 INK, INK2, GRID, SURF = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
-LENGTHS = [100, 50, 34, 25, 20, 17, 13, 10, 8, 5, 4, 2]          # -> 1, 2, 3, 4, 5, 6, 8, 10, 13, 20, 25, 50 blocks/row
+LENGTHS = [100, 50, 34, 32, 25, 20, 17, 16, 13, 10, 8, 5, 4, 2]  # -> 1, 2, 3, 4, 4, 5, 6, 7, 8, 10, 13, 20, 25, 50 blocks/row
+# 32 = the class layouts (blocks 32, 32, 32 and a tail of 4); 16 = BFP 16|4|5, the comparison layout
 
 
 MODE = "wx"
@@ -83,7 +85,7 @@ def main():
           "Mode: " + ("W and X both quantized (X with the same block length, down its columns)." if MODE == "wx"
                       else "weights only quantized, X in full precision."), "",
           "Held-out Y error % (class rule `ocp`; `opt` in brackets for the integer formats). MX formats pay 8 bits per scale, "
-          "BFP 4 bits. **Bold** = the class layouts (MX block 32, BFP 16).", "",
+          "BFP 4 bits. **Bold** = the class layouts (block 32 for every format).", "",
           "| block length | blocks/row | MX bits/elem | BFP bits/elem | " + " | ".join(SHORT[n] for n in NAMES) + " | winner (same length) | ρ |",
           "|---|---|---|---|" + "---|" * len(NAMES) + "---|---|"]
     for L in LENGTHS:
@@ -92,18 +94,12 @@ def main():
         for n in NAMES:
             v = res[n, L]
             s = f"{v[2]:.3f}" + (f" [{v[3]:.3f}]" if n in ("MXINT6", "BFP6") else "")
-            if (n == "BFP6" and L == 16) or (n != "BFP6" and L == 32):
+            if L == layout(n)["block"]:
                 s = f"**{s}**"
             cells.append(s)
         win = min(NAMES, key=lambda n: res[n, L][2])
         md.append(f"| {L} | {nb} | {6 + nb * 0.08:.2f} | {6 + nb * 0.04:.2f} | " + " | ".join(cells) +
                   f" | {SHORT[win]} | {rho(W, L):.2f} |")
-    # the two class layouts were not in LENGTHS
-    for n, L in (("BFP6", 16), ("MXFP6_E2M3", 32), ("MXINT6", 32)):
-        if (n, L) not in res:
-            _, Xe = split_X(X)
-            nb = len(blocks(100, L))
-            res[n, L] = (nb, 6 + nb * layout(n)["scale_bits"] / 100, yerr(W, Xe, n, L, "ocp"), yerr(W, Xe, n, L, "opt"))
     budgets = [6.04, 6.08, 6.16, 6.24, 6.28, 6.32, 6.40, 6.50, 6.64, 6.80, 7.0, 8.0]
     md += ["", "## Equal storage: the best format and block length within each bits/element budget (class rule)", "",
            "| budget (bits/elem) | best | block length | bits used | held-out Y err % | best MX format (8-bit scale) | best E2M3 |",
@@ -170,11 +166,12 @@ def main():
     ax.tick_params(colors=INK2, labelsize=8)
     ax.grid(True, color=GRID, lw=0.8)
     for n in ("MXFP6_E2M3", "BFP6", "MXINT6", "MXFP6_E3M2"):
-        pts = sorted({res[n, L][1]: res[n, L][2] for L in LENGTHS + [16, 32] if (n, L) in res}.items())
+        pts = sorted({res[n, L][1]: min(res[n, L2][2] for L2 in LENGTHS if res[n, L2][1] == res[n, L][1])
+                      for L in LENGTHS}.items())
         pts = [q for q in pts if q[0] <= 7.05]
         ax.plot([q[0] for q in pts], [q[1] for q in pts], color=COL[n], lw=2, marker="o", markersize=4,
                 markeredgecolor=SURF, label=SHORT[n])
-    for n, L in (("MXFP6_E2M3", 32), ("BFP6", 16), ("MXINT6", 32)):
+    for n, L in (("MXFP6_E2M3", 32), ("BFP6", 32), ("MXINT6", 32)):
         ax.scatter(res[n, L][1], res[n, L][2], s=90, facecolor="none", edgecolor=INK, lw=1.2, zorder=4)
     ax.set_xlabel("storage (bits per element, scales included)", fontsize=9, color=INK)
     ax.set_ylabel("held-out Y error (%, class rule)", fontsize=9, color=INK)

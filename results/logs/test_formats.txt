@@ -1,5 +1,5 @@
 $ python test_formats.py
-# exit 0, 0.6 s
+# exit 0, 0.5 s
 
 PASS  test_all_zero_block_scale_one
 PASS  test_bfp6_variants_vs_mxint6

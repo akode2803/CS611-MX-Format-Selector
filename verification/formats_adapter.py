@@ -12,7 +12,8 @@ NAME = {
     "MXFP_E4M1_onenan": "MXFP6_E4M1_nan1",
     "MXINT6": "MXINT6_sym",                    # reference "MXINT6" = symmetric [-31, 31]
     "MXINT6_twos": "MXINT6",                   # A5 revised 23 Oct: candidate MXINT6 = two's complement
-    "BFP6": "BFP6",                            # v2: 16|4|5 (A6)
+    "BFP6": "BFP6",                            # v3: 32|4|5 (A6)
+    "BFP6_16_4": "BFP6_g16",                   # 16|4|5 (comparison row)
     "BFP6_32_8_floor": "BFP6_g32e8",
     "BFP6_32_8_ceil": "BFP6_b32_ceil",         # v2 name of the old BFP6
     "BFP6_row100": "BFP6_row",

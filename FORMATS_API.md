@@ -1,23 +1,24 @@
-# formats.py v2: how to use it
+# formats.py v3: how to use it
 
 v1 calls still work: `quantize(W, name)`, `quantize(W, name, policy=..., H=...)`, `metrics(W, Wq, X)` and `exhaustive(W, X)`.
-**What changed in v2:** `"BFP6"` is now the A6 candidate 16|4|5, so its numbers changed. The v1 BFP6 is `"BFP6_b32_ceil"`. `n_saturated` now uses the Lecture 19 definition (see Stats).
+**What changed in v3:** `"BFP6"` is the A6 candidate 32|4|5 (groups of 32, 4-bit exponent); the 16|4|5 layout of v2 is the comparison variant `"BFP6_g16"`. The v1 BFP6 is `"BFP6_b32_ceil"`. `n_saturated` uses the Lecture 19 definition (see Stats).
 
 ## Formats
 
 ```python
 from formats import FORMATS, VARIANTS, spec, layout
 list(FORMATS)    # the 5 candidates: MXFP6_E3M2, MXFP6_E2M3, MXFP6_E4M1, MXINT6, BFP6
-layout("BFP6")   # {'block': 16, 'policy': 'ocp', 'scale_bits': 4, 'field': (-8, 7)}
+layout("BFP6")   # {'block': 32, 'policy': 'ocp', 'scale_bits': 4, 'field': (-8, 7)}
 ```
 
 | name | role | definition | bits/elem (100x100) |
 |---|---|---|---|
 | MXFP6_E3M2 / E2M3 / E4M1 | candidates | class FP6; E4M1 vmax 384 (A4) | 6.32 |
 | MXINT6 | candidate | k·2^-4, two's complement k in [-32, 31] (A5, revised 23 Oct) | 6.32 |
-| BFP6 | candidate | 16\|4\|5: 4-bit E = floor(log2 max) in [-8, 7], ±M·2^(E-4), M ≤ 31 (A6) | 6.28 |
+| BFP6 | candidate | 32\|4\|5: 4-bit E = floor(log2 max) in [-8, 7], ±M·2^(E-4), M ≤ 31 (A6) | 6.16 |
 | MXFP6_E4M1_v192 | variant | top exponent reserved, vmax 192 | 6.32 |
 | MXFP6_E4M1_nan1 | variant | one NaN code, vmax 256 | 6.32 |
+| BFP6_g16 | variant | BFP 16\|4\|5 (comparison row) | 6.28 |
 | BFP6_g32e8 | variant | BFP 32\|8\|5, floor: identical to MXINT6_sym | 6.32 |
 | BFP6_b32_ceil | variant | v1's BFP6 (block 32, ceil) | 6.32 |
 | BFP6_row | variant | one block per row, ceil | 6.08 |

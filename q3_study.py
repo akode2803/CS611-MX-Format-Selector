@@ -2,7 +2,7 @@
 
     python q3_study.py [--mode wx|w]   # about 2 min; results/q3_study_<mode>.md, figures/fig8..fig10
 
-Conventions: formats.py v2.2 (five candidates, BFP6 16|4|5, MXINT6 two's complement).
+Conventions: formats.py v3.0 (five candidates, BFP6 32|4|5, MXINT6 two's complement).
 --mode wx (default, primary): W and X both quantized with the candidate; --mode w: weights
 only, X in full precision.  Metric (A11): relative Frobenius error of Y = W X on the held-out odd
 columns of X_cal; both the class rule `ocp` and `opt`.  Every point is the mean of 10 seeds;
@@ -19,12 +19,16 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt   # noqa: E402
 
 import selector as S              # noqa: E402
-from formats import FORMATS, FORMATS_VERSION, quantize, quantize_X, split_X   # noqa: E402
+from formats import FORMATS, FORMATS_VERSION, blocks, layout, quantize, quantize_X, split_X   # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NAMES = list(FORMATS)
-SHORT = {"MXFP6_E3M2": "E3M2", "MXFP6_E2M3": "E2M3", "MXFP6_E4M1": "E4M1", "MXINT6": "MXINT6", "BFP6": "BFP6"}
-COL = {"MXFP6_E2M3": "#2a78d6", "BFP6": "#eb6834", "MXINT6": "#1baf7a", "MXFP6_E3M2": "#eda100", "MXFP6_E4M1": "#e87ba4"}
+CMP = ["BFP6_g16"]                # comparison column (16|4|5): reported, never a winner
+ALL = NAMES + CMP
+SHORT = {"MXFP6_E3M2": "E3M2", "MXFP6_E2M3": "E2M3", "MXFP6_E4M1": "E4M1", "MXINT6": "MXINT6", "BFP6": "BFP6",
+         "BFP6_g16": "BFP6_g16 (cmp.)"}   # 16|4|5; no "|" inside table cells
+COL = {"MXFP6_E2M3": "#2a78d6", "BFP6": "#eb6834", "MXINT6": "#1baf7a", "MXFP6_E3M2": "#eda100", "MXFP6_E4M1": "#e87ba4",
+       "BFP6_g16": "#8f8d88"}
 INK, INK2, GRID, SURF = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
 SEEDS = 10
 
@@ -55,7 +59,7 @@ def evaluate(W, cols=None, rows=None):
     coming from those input columns / in those output rows."""
     out = {}
     for pol in ("ocp", "opt"):
-        for n in NAMES:
+        for n in ALL:
             Wq, _, st = quantize(W, n, policy=pol, return_stats=True)
             XQ = xq(n, pol)
             e = 100 * np.linalg.norm(W @ XE - Wq @ XQ) / np.linalg.norm(W @ XE)
@@ -71,26 +75,35 @@ def evaluate(W, cols=None, rows=None):
 
 
 def summarize(trials, pol="ocp", key=0):
-    E = {n: np.array([t[n, pol][key] for t in trials]) for n in NAMES}
-    mean = {n: E[n].mean() for n in NAMES}
+    """Winner, runner-up and margin among the five candidates; means and counts also for CMP."""
+    E = {n: np.array([t[n, pol][key] for t in trials]) for n in ALL}
+    mean = {n: E[n].mean() for n in ALL}
     order = sorted(NAMES, key=mean.get)
     d = E[order[1]] - E[order[0]]
     wins = [min(NAMES, key=lambda n: t[n, pol][key]) for t in trials]
     agree = np.mean([t["pick"] == min(NAMES, key=lambda n: t[n, "ocp"][0]) for t in trials])
-    return dict(mean=mean, sd={n: E[n].std() for n in NAMES}, winner=order[0], second=order[1],
+    return dict(mean=mean, sd={n: E[n].std() for n in ALL}, winner=order[0], second=order[1],
                 margin=d.mean(), margin_sd=d.std(), seed_wins=wins.count(order[0]), agree=agree,
-                zeroed={n: np.mean([t[n, pol][2] for t in trials]) for n in NAMES},
-                clamped={n: np.mean([t[n, pol][4] for t in trials]) for n in NAMES},
-                clipped={n: np.mean([t[n, pol][3] for t in trials]) for n in NAMES})
+                zeroed={n: np.mean([t[n, pol][2] for t in trials]) for n in ALL},
+                clamped={n: np.mean([t[n, pol][4] for t in trials]) for n in ALL},
+                clipped={n: np.mean([t[n, pol][3] for t in trials]) for n in ALL})
 
 
 def row(label, s_ocp, s_opt, extra=""):
     f = lambda s: f"{SHORT[s['winner']]} ({s['seed_wins']}/{SEEDS}) +{s['margin']:.2f} ± {s['margin_sd']:.2f}"
-    m = " | ".join(f"{s_ocp['mean'][n]:.2f}" for n in NAMES)
+    m = " | ".join(f"{s_ocp['mean'][n]:.2f}" for n in ALL)
     return f"| {label} | {m} | {f(s_ocp)} | {f(s_opt)} | {100 * s_ocp['agree']:.0f}% |{extra}"
 
 
-HEAD = ("| " + " | ".join(SHORT[n] for n in NAMES) + " | winner ocp (seeds), margin pp | winner opt | selector picks the held-out winner |")
+HEAD = ("| " + " | ".join(SHORT[n] for n in ALL) + " | winner ocp (seeds), margin pp | winner opt | selector picks the held-out winner |")
+
+
+def rho_(W, name):
+    """Closed-form integer statistic ρ = Σ n_nz·4^R / Σw² with R the (clamped) block exponent of name."""
+    A, _ = S._units(np.asarray(W, dtype=np.float64), None)
+    A = np.abs(A)
+    R = S._ref_exp(A, *S._family(name))
+    return float(((A > 0) * 4.0 ** R).sum() / (W ** 2).sum())
 
 
 def style(ax):
@@ -107,8 +120,9 @@ def outliers(md):
     md += ["## 1. Outliers", "",
            "n weights of W_C replaced by ±k·σ (σ = std of W_C). Magnitudes are **continuous** (k·σ·U(0.7, 1.3)); "
            "the last block uses exact magnitudes k·σ instead, to show a grid artifact. "
-           "Columns E3M2…BFP6 are held-out Y error % under the class rule.", "",
-           "| n, k, magnitudes | blocks with an outlier | " + HEAD[2:], "|" + "---|" * (len(NAMES) + 6)]
+           "Columns E3M2…BFP6 are held-out Y error % under the class rule; the BFP6_g16 column is a comparison "
+           "(BFP 16|4|5: groups of 16, 6.28 bits per element) and never counts as a winner.", "",
+           "| n, k, magnitudes | blocks with an outlier | " + HEAD[2:], "|" + "---|" * (len(ALL) + 6)]
     fig_pts = []
     for exact in (False, True):
         for n in ((1, 5, 20, 100, 400) if not exact else (20, 100)):
@@ -129,10 +143,10 @@ def outliers(md):
     md += ["", "Mechanism, continuous magnitudes, n = 100, k = 20σ, class rule: values flushed to zero by the quantizer / values above the "
            "format's range before rounding (mean per matrix):", ""]
     so = [p[3] for p in fig_pts if p[0] == 100 and p[1] == 20][0]
-    md.append("| | " + " | ".join(SHORT[n] for n in NAMES) + " |")
-    md.append("|---|" + "---|" * len(NAMES))
-    md.append("| flushed to 0 | " + " | ".join(f"{so['zeroed'][n]:.0f}" for n in NAMES) + " |")
-    md.append("| above range | " + " | ".join(f"{so['clipped'][n]:.0f}" for n in NAMES) + " |")
+    md.append("| | " + " | ".join(SHORT[n] for n in ALL) + " |")
+    md.append("|---|" + "---|" * len(ALL))
+    md.append("| flushed to 0 | " + " | ".join(f"{so['zeroed'][n]:.0f}" for n in ALL) + " |")
+    md.append("| above range | " + " | ".join(f"{so['clipped'][n]:.0f}" for n in ALL) + " |")
     md.append("")
     # figure: E3M2 - E2M3 and BFP6 - E2M3 gap vs fraction of blocks touched, per k
     fig, ax = plt.subplots(figsize=(6.2, 3.8), facecolor=SURF)
@@ -149,7 +163,7 @@ def outliers(md):
     ax.set_xscale("log")
     ax.set_xlabel("blocks containing an outlier (%, log scale)", fontsize=9, color=INK)
     ax.set_ylabel("error gap to E2M3 (pp; > 0: E2M3 better)", fontsize=9, color=INK)
-    ax.set_title("Outliers (continuous magnitudes): E3M2 never wins; BFP6 does at 100σ", fontsize=10, color=INK, loc="left")
+    ax.set_title("Outliers (continuous magnitudes): error gap to E2M3", fontsize=10, color=INK, loc="left")
     ax.legend(frameon=False, fontsize=7, labelcolor=INK)
     fig.tight_layout()
     fig.savefig(os.path.join(HERE, "figures", figname("fig8_q3_outliers.png")), dpi=160, facecolor=SURF)
@@ -162,7 +176,7 @@ RHO = {}
 def sparsity(md):
     md += ["## 2. Sparsity", "",
            "A fraction p of W_C's weights (uniform random positions) set to zero.", "",
-           "| zeros | " + HEAD[2:], "|" + "---|" * (len(NAMES) + 4)]
+           "| zeros | " + HEAD[2:], "|" + "---|" * (len(ALL) + 4)]
     ps = [0, 10, 20, 30, 40, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
     curves = []
     for p in ps:
@@ -172,31 +186,33 @@ def sparsity(md):
             W = W0 * (r.random(W0.shape) >= p / 100)
             trials.append(evaluate(W))
             cf, e2 = S.closed_form(W), (W ** 2).sum()
-            rho.append((cf["MXINT6"] * 12 * 4 ** 4 / e2, cf["BFP6"] * 12 * 4 ** 4 / e2, cf["MXFP6_E2M3"] * 12 * 4 ** 3 / e2))
+            rho.append((rho_(W, "MXINT6"), rho_(W, "BFP6_g16"), cf["MXFP6_E2M3"] * 12 * 4 ** 3 / e2))
         RHO[p] = np.mean(rho, 0)
         so, sp = summarize(trials), summarize(trials, "opt")
         md.append(row(f"{p}%", so, sp))
         curves.append((p, so))
     md += ["", "Mechanism (class rule, mean per matrix): share of the remaining non-zero weights that the quantizer "
-           "flushes to zero, and the closed-form statistics: ρ = Σ n_nz·4^F / Σw² for 32- and 16-blocks "
-           "(integer error ∝ ρ) and φ = Σ 4^floor(log2|w|) / Σw² (FP error ∝ φ):", "",
-           "| zeros | " + " | ".join(SHORT[n] for n in NAMES) + " | ρ32 | ρ16 | φ |", "|---|" + "---|" * (len(NAMES) + 3)]
+           "flushes to zero, and the closed-form statistics: ρ = Σ n_nz·4^R / Σw² (R = block exponent) for blocks of 32 "
+           "(MXINT6 and BFP6) and of 16 (BFP6_g16); integer error ∝ ρ; and φ = Σ 4^floor(log2|w|) / Σw² "
+           "(FP error ∝ φ):", "",
+           "| zeros | " + " | ".join(SHORT[n] for n in ALL) + " | ρ32 | ρ16 | φ |", "|---|" + "---|" * (len(ALL) + 3)]
     for p, so in curves:
-        if p in (0, 40, 50, 80, 95):
+        if p in (0, 40, 50, 75, 80, 85, 95):
             nnz = W0.size * (1 - p / 100)
-            md.append(f"| {p}% | " + " | ".join(f"{100 * so['zeroed'][n] / nnz:.1f}%" for n in NAMES)
+            md.append(f"| {p}% | " + " | ".join(f"{100 * so['zeroed'][n] / nnz:.1f}%" for n in ALL)
                       + f" | {RHO[p][0]:.2f} | {RHO[p][1]:.2f} | {RHO[p][2]:.3f} |")
     md.append("")
     fig, ax = plt.subplots(figsize=(6.2, 3.8), facecolor=SURF)
     style(ax)
-    for n in ("MXFP6_E2M3", "BFP6", "MXINT6", "MXFP6_E3M2"):
+    for n in ("MXFP6_E2M3", "BFP6", "MXINT6", "MXFP6_E3M2", "BFP6_g16"):
         m = np.array([so["mean"][n] for _, so in curves])
         sd = np.array([so["sd"][n] for _, so in curves])
-        ax.plot(ps, m, color=COL[n], lw=2, label=SHORT[n])
+        ax.plot(ps, m, color=COL[n], lw=2 if n in NAMES else 1.5, ls="-" if n in NAMES else "--",
+                label=SHORT[n] if n in NAMES else "BFP 16|4|5 (comparison)")
         ax.fill_between(ps, m - sd, m + sd, color=COL[n], alpha=0.15, lw=0)
     ax.set_xlabel("weights set to zero (%)", fontsize=9, color=INK)
     ax.set_ylabel("held-out Y error (%, class rule)", fontsize=9, color=INK)
-    ax.set_title("Sparsity: the integer grids overtake E2M3", fontsize=10, color=INK, loc="left")
+    ax.set_title("Sparsity: held-out error against the share of zeros", fontsize=10, color=INK, loc="left")
     ax.legend(frameon=False, fontsize=8, labelcolor=INK)
     fig.tight_layout()
     fig.savefig(os.path.join(HERE, "figures", figname("fig9_q3_sparsity.png")), dpi=160, facecolor=SURF)
@@ -208,10 +224,11 @@ def scale(md):
            "Gains 10^U(−a, a) applied (a) per **row** (one gain per output row: every block lies inside one row, so its "
            "scale absorbs the gain), (b) per **column** (input channel: gains change inside every block). "
            "'weak 25%' = error of the Y rows with the 25% smallest gains (row mode), or of the part of Y coming from the 25% "
-           "of input columns with the smallest gains (column mode). Last column: BFP6 blocks whose 4-bit exponent "
-           "clamps (out of 700).", "",
-           "| spread | " + HEAD[2:] + " weak-25% error: " + " / ".join(SHORT[n] for n in NAMES) + " | weak-25% winner | BFP6 clamped blocks |",
-           "|" + "---|" * (len(NAMES) + 7)]
+           "of input columns with the smallest gains (column mode). Last column: blocks whose 4-bit exponent clamps, "
+           f"BFP6 (out of {100 * len(blocks(100, layout('BFP6')['block']))}) / BFP6_g16 "
+           f"(out of {100 * len(blocks(100, layout('BFP6_g16')['block']))}).", "",
+           "| spread | " + HEAD[2:] + " weak-25% error: " + " / ".join(SHORT[n] for n in ALL) + " | weak-25% winner | clamped blocks BFP6 / BFP6_g16 |",
+           "|" + "---|" * (len(ALL) + 7)]
     fig_rows = []
     for mode in ("row", "column"):
         for a in (0.5, 1, 1.5, 2):
@@ -225,8 +242,8 @@ def scale(md):
                     g = 10 ** r.uniform(-a, a, 100)
                     trials.append(evaluate(W0 * g[None, :], cols=np.argsort(g)[:25]))
             so, sp, sw = summarize(trials), summarize(trials, "opt"), summarize(trials, key=1)
-            extra = (" " + " / ".join(f"{sw['mean'][n]:.1f}" for n in NAMES) + f" | {SHORT[sw['winner']]} | "
-                     f"{so['clamped']['BFP6']:.0f} |")
+            extra = (" " + " / ".join(f"{sw['mean'][n]:.1f}" for n in ALL) + f" | {SHORT[sw['winner']]} | "
+                     f"{so['clamped']['BFP6']:.0f} / {so['clamped']['BFP6_g16']:.0f} |")
             md.append(row(f"{mode} 10^±{a} (max/min 10^{2 * a:g})", so, sp, extra))
             fig_rows.append((mode, a, so, sw))
     md.append("")
@@ -259,7 +276,7 @@ def main():
           f"{SEEDS} seeds. Margin = runner-up − winner in percentage points, mean ± sd over seeds; "
           "'(s/10)' = seeds in which that format won. Last column: how often the chosen selection method "
           "(exact sketch, activation-weighted, fitted on the even columns) picks the held-out class-rule winner.", "",
-          "Unmodified W_C, class rule: " + ", ".join(f"{SHORT[n]} {base[n, 'ocp'][0]:.3f}" for n in NAMES) +
+          "Unmodified W_C, class rule: " + ", ".join(f"{SHORT[n]} {base[n, 'ocp'][0]:.3f}" for n in ALL) +
           f"; selector picks {SHORT[base['pick']]}.", ""]
     outliers(md)
     sparsity(md)

@@ -164,8 +164,10 @@ def test_zero_block_tail_block_and_clamps():
     W[:, 96:] *= 0.01
     e = S.quantize(W, "MXFP6_E2M3")[1]
     assert e.shape == (5, 4) and np.array_equal(e[:, 3], np.floor(np.log2(np.abs(W[:, 96:]).max(1))) - 2)
-    assert S.quantize(W, "BFP6")[1].shape == (5, 7)                   # 6 x 16 + tail of 4
-    assert np.isclose(S.bits_per_elem("BFP6"), 6.28) and np.isclose(S.bits_per_elem("MXINT6"), 6.32)
+    assert S.quantize(W, "BFP6")[1].shape == (5, 4)                   # 3 x 32 + tail of 4
+    assert S.quantize(W, "BFP6_g16")[1].shape == (5, 7)               # 6 x 16 + tail of 4
+    assert np.isclose(S.bits_per_elem("BFP6"), 6.16) and np.isclose(S.bits_per_elem("BFP6_g16"), 6.28)
+    assert np.isclose(S.bits_per_elem("MXINT6"), 6.32)
     # BFP6's 4-bit exponent: clamp to [-8, 7]
     big = np.full((1, 16), 1000.0)
     Wq, e = S.quantize(big, "BFP6")
