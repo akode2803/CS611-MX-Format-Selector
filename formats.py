@@ -1,4 +1,4 @@
-"""6-bit candidate formats for CS611 A1, Group 8 (dataset C).  Owner: Akash.   Version 2.1 (24 Oct: D10 revised).
+"""6-bit candidate formats for CS611 A1, Group 8 (dataset C).  Owner: Akash.   Version 2.2 (24 Oct: D10 revised; D13 literal ceil).
 
 Conventions. [CLASS] = Lecture 19 OCP-MX notebook / board notes; [TEAM Dn] = our decision
 from TEAM_PLAN.md section 1, to be stated and defended in the report.
@@ -13,6 +13,7 @@ from TEAM_PLAN.md section 1, to be stated and defended in the report.
   Policies  "ocp"   e = floor(log2 amax) - emax_elem                     [CLASS default]
             "ceil"  smallest power-of-two scale that clips nothing; equal to the class
                     notebook's "floor rule, +1 if the max does not fit"  [CLASS follow-up]
+                    Two's complement: a negative max fits down to code -32 (v2.2, D13)
             "opt"   per block, try e_ocp + {-2, -1, 0, +1}, keep the lowest error:
                     weight MSE, or output-aware r^T H_bb r with H = X X^T if H is given.
                     Ties keep the offset closest to 0. The scale stays a power of two in
@@ -71,7 +72,7 @@ except ImportError:                     # pragma: no cover
     def tqdm(it, **_):
         return it
 
-FORMATS_VERSION = "v2.1"
+FORMATS_VERSION = "v2.2"
 BLOCK = 32
 E8M0_MIN, E8M0_MAX = -127, 127
 OPT_OFFSETS = (-2, -1, 0, 1)
@@ -208,27 +209,41 @@ def blocks(n, block=BLOCK):
     return [slice(s, min(s + block, n)) for s in range(0, n, block)]
 
 
-def default_exp(kind, p, emax, amax, policy=None, field=(E8M0_MIN, E8M0_MAX), clamp=True):
+def _ceil_exp(a, vmax):
+    """Smallest e with a / 2^e <= vmax (a > 0). log2 of the ratio can be off by one
+    near a power of two, so correct it with exact power-of-two divisions."""
+    e = np.ceil(np.log2(a / vmax))
+    e = np.where(a / 2.0 ** e > vmax, e + 1, e)
+    return np.where(a / 2.0 ** (e - 1) <= vmax, e - 1, e)
+
+
+def default_exp(kind, p, emax, amax, policy=None, field=(E8M0_MIN, E8M0_MAX), clamp=True, amax_neg=None):
     """Scale exponent e (scale = 2^e) for blocks with max |w| = amax.
 
     policy None -> "ocp" (v1 used "ceil" for BFP; D1 makes the floor rule the BFP default).
     field: range of the STORED exponent; for BFP the stored value is e + emax_elem.
     All-zero blocks store 0. clamp=False returns the unclamped exponent.
+    amax_neg (ceil only): if given, amax is the largest POSITIVE value and amax_neg the largest
+    magnitude of a negative value, so an asymmetric code (two's complement: -32 is a code)
+    is "clipping nothing" when amax <= vmax * 2^e and amax_neg <= |vmin| * 2^e. [TEAM, 24 Oct]
     """
     amax = np.asarray(amax, dtype=np.float64)
     policy = policy or "ocp"
     off = field_offset(kind, emax)
+    if amax_neg is not None and policy == "ceil":
+        amax_neg = np.asarray(amax_neg, dtype=np.float64)
+        pos = (amax > 0) | (amax_neg > 0)
+        e_p = np.where(amax > 0, _ceil_exp(np.where(amax > 0, amax, 1.0), vmax_elem(kind, p)), -np.inf)
+        e_n = np.where(amax_neg > 0, _ceil_exp(np.where(amax_neg > 0, amax_neg, 1.0), -vmin_elem(kind, p)), -np.inf)
+        e = np.where(pos, np.maximum(e_p, e_n), 0.0)
+        e = np.where(pos, e, -off)
+        return np.clip(e, field[0] - off, field[1] - off) if clamp else e
     pos = amax > 0
     safe = np.where(pos, amax, 1.0)
     if policy == "ocp":
         e = floor_log2(safe) - emax
     elif policy == "ceil":
-        # smallest e with amax / 2^e <= vmax. log2 of the ratio can be off by one
-        # near a power of two, so correct it with exact power-of-two divisions.
-        vmax = vmax_elem(kind, p)
-        e = np.ceil(np.log2(safe / vmax))
-        e = np.where(safe / 2.0 ** e > vmax, e + 1, e)
-        e = np.where(safe / 2.0 ** (e - 1) <= vmax, e - 1, e)
+        e = _ceil_exp(safe, vmax_elem(kind, p))
     else:
         raise ValueError(f"default_exp needs policy 'ocp' or 'ceil', got {policy!r}")
     e = np.where(pos, e, -off)
@@ -292,7 +307,11 @@ def quantize(W, name, block=None, shift_search=0, H=None, policy=None, return_st
     for sl in blocks(W.shape[1], block):
         Wb = W[:, sl]
         amax = np.abs(Wb).max(axis=1)
-        e_raw = default_exp(kind, p, emax, amax, policy=base, field=lay["field"], clamp=False)
+        if base == "ceil" and vneg != -vpos:            # asymmetric code: signs fit differently
+            e_raw = default_exp(kind, p, emax, np.maximum(Wb, 0).max(axis=1), policy=base, field=lay["field"],
+                                clamp=False, amax_neg=np.maximum(-Wb, 0).max(axis=1))
+        else:
+            e_raw = default_exp(kind, p, emax, amax, policy=base, field=lay["field"], clamp=False)
         e0 = np.clip(e_raw, e_lo, e_hi)
         best_err = np.full(W.shape[0], np.inf)
         best_q = np.zeros_like(Wb)

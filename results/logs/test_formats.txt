@@ -1,9 +1,10 @@
 $ python test_formats.py
-# exit 0, 0.6 s
+# exit 0, 0.4 s
 
 PASS  test_all_zero_block_scale_one
 PASS  test_bfp6_variants_vs_mxint6
 PASS  test_ceil_never_saturates_and_opt_never_worse
+PASS  test_ceil_two_complement_negative_max_fits_minus_32
 PASS  test_dataset_C_matches_prototype
 PASS  test_exhaustive_and_checkpoint
 PASS  test_exponent_field_clamped
@@ -32,4 +33,4 @@ PASS  test_v2_quantize_X_blocks_run_down_columns
 PASS  test_v2_range_vs_saturated_counts
 PASS  test_v2_true_storage_per_format
 
-30/30 passed
+31/31 passed

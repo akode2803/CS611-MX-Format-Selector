@@ -1,5 +1,5 @@
 $ python run_baseline.py --variants --fresh
-# exit 0, 0.4 s
+# exit 0, 0.5 s
 
 W (100, 100)  X (100, 256)  formats 11  dataset C  mode w
 
@@ -8,7 +8,7 @@ format                         ocp             ceil              opt          op
 MXFP6_E3M2           5.439 [ 5.47]    5.236 [ 5.26]    5.236 [ 5.26]    5.234 [ 5.26]     6.32
 MXFP6_E2M3           3.079 [ 3.10]    3.103 [ 3.13]    3.058 [ 3.08]    3.060 [ 3.08]     6.32
 MXFP6_E4M1          11.088 [11.15]   10.176 [10.24]   10.176 [10.24]   10.163 [10.23]     6.32
-MXINT6               4.048 [ 4.05]    4.168 [ 4.17]    3.850 [ 3.88]    3.864 [ 3.91]     6.32
+MXINT6               4.048 [ 4.05]    4.149 [ 4.16]    3.850 [ 3.88]    3.864 [ 3.91]     6.32
 BFP6                 3.464 [ 3.48]    3.574 [ 3.60]    3.403 [ 3.44]    3.402 [ 3.44]     6.28
 MXFP6_E4M1_v192     11.088 [11.15]   10.176 [10.24]   10.176 [10.24]   10.163 [10.23]     6.32
 MXFP6_E4M1_nan1     20.722 [20.66]   10.176 [10.24]   10.176 [10.24]   10.160 [10.22]     6.32
@@ -55,7 +55,7 @@ Ranking under the class 'ocp' rule only:
   10. MXFP6_E4M1        11.088%
   11. MXFP6_E4M1_nan1   20.722%
 
-BFP 32|8|5 (BFP6_g32e8) vs MXINT6: identical under policies ['ceil']
+BFP 32|8|5 (BFP6_g32e8) vs MXINT6: identical under policies []
 BFP6 (16|4|5, the candidate) vs MXINT6 under ocp: 3.464% vs 4.048%
 Cost of this exhaustive run: 1,100,000 element roundings + 112,640,000 MACs
 
@@ -64,6 +64,6 @@ Saved /Users/aryan/Documents/GitHub/CS611 Assignment/cs611-g8/results/baseline_C
 [stderr]
 
 exhaustive[w]:   0%|          | 0/44 [00:00<?, ?it/s]
-exhaustive[w]:  39%|███▊      | 17/44 [00:00<00:00, 163.77it/s]
-exhaustive[w]:  91%|█████████ | 40/44 [00:00<00:00, 181.29it/s]
-exhaustive[w]: 100%|██████████| 44/44 [00:00<00:00, 183.33it/s]
+exhaustive[w]:  27%|██▋       | 12/44 [00:00<00:00, 114.69it/s]
+exhaustive[w]:  80%|███████▉  | 35/44 [00:00<00:00, 153.23it/s]
+exhaustive[w]: 100%|██████████| 44/44 [00:00<00:00, 149.37it/s]

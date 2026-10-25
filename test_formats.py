@@ -207,9 +207,9 @@ def test_ceil_never_saturates_and_opt_never_worse():
 
 def test_bfp6_variants_vs_mxint6():
     # v2 (D1): BFP6 is now 16|4|5 and is NOT MXINT6. The old block-32 "ceil" BFP6 is kept
-    # as BFP6_b32_ceil and is still identical to MXINT6 under ceil (documented equivalence).
+    # as BFP6_b32_ceil and is still identical to symmetric MXINT6 under ceil (documented equivalence).
     W = rng.standard_normal((40, 100))
-    assert np.array_equal(quantize(W, "BFP6_b32_ceil")[0], quantize(W, "MXINT6", policy="ceil")[0])
+    assert np.array_equal(quantize(W, "BFP6_b32_ceil")[0], quantize(W, "MXINT6_sym", policy="ceil")[0])
     assert not np.array_equal(quantize(W, "BFP6")[0], quantize(W, "MXINT6")[0])
     # the whole-row variant is genuinely different
     assert not np.array_equal(quantize(W, "BFP6_row")[0], quantize(W, "MXINT6")[0])
@@ -337,6 +337,18 @@ def test_v2_mxint6_twos_complement():
 
 
 # ---------------------------------------------------------------- v2: storage (D11)
+def test_ceil_two_complement_negative_max_fits_minus_32():
+    # literal "smallest scale that clips nothing" (24 Oct): block max -1.99 * 2^0 fits code -32
+    # at e = 0, so ceil keeps e = 0; +1.99 does not fit +31/16 and moves up to e = 1
+    W = np.zeros((2, 32))
+    W[0, 0], W[1, 0] = -1.99, 1.99
+    W[:, 1] = 0.3
+    _, e = quantize(W, "MXINT6", policy="ceil")
+    assert e[0, 0] == 0 and e[1, 0] == 1, e
+    _, e = quantize(W, "MXINT6_sym", policy="ceil")
+    assert e[0, 0] == 1 and e[1, 0] == 1, e
+
+
 def test_v2_true_storage_per_format():
     expect = {n: 6.32 for n in FORMATS}
     expect.update({"BFP6": 6.28, "BFP6_g32e8": 6.32, "BFP6_b32_ceil": 6.32, "BFP6_row": 6.08,
@@ -410,7 +422,7 @@ def test_dataset_C_matches_prototype():
         return
     proto = {  # % Y error from the team plan (ocp, ceil, block-optimal)
         "MXFP6_E2M3": (3.08, 3.10, 3.06), "MXINT6_sym": (4.05, 4.17, 3.90),
-        "MXINT6": (4.05, 4.17, 3.85),                  # two's complement (D10): only opt moves
+        "MXINT6": (4.05, 4.15, 3.85),                  # two's complement (D10); ceil: literal reading
         "MXFP6_E3M2": (5.44, 5.24, 5.24), "MXFP6_E4M1": (11.09, 10.18, 10.18),
     }
     for n, vals in proto.items():

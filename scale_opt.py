@@ -180,6 +180,10 @@ def base_exp(f, amax, rule="ocp", Wb=None):
     if rule == "ceil":
         clips = out_of_range(f, Wb / np.ldexp(1.0, e)[:, None]).any(1)
         e = e + clips
+        # two's complement: a negative max of exactly -2^F is code -32 one exponent lower, so the
+        # smallest scale that clips nothing can be e_ocp - 1 (D13); never true for symmetric codes
+        lower = ~out_of_range(f, Wb / np.ldexp(1.0, e - 1)[:, None]).any(1)
+        e = e - lower
     elif rule != "ocp":
         raise ValueError(rule)
     return np.where(pos, e, 0)

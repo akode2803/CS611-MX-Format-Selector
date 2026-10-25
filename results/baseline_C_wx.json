@@ -18,8 +18,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.009354874986456707,
-  "fingerprint": "88b46e0e626174a0"
+  "seconds": 0.009517166996374726,
+  "fingerprint": "b51351605a635942"
  },
  {
   "format": "MXFP6_E3M2",
@@ -40,8 +40,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.04990800001542084,
-  "fingerprint": "1bc89e62d7792067"
+  "seconds": 0.17274958398775198,
+  "fingerprint": "2b6683025766f07f"
  },
  {
   "format": "MXFP6_E3M2",
@@ -62,8 +62,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.014571874984540045,
-  "fingerprint": "a617aba5e279c06a"
+  "seconds": 0.03291720899869688,
+  "fingerprint": "18f4145176386b41"
  },
  {
   "format": "MXFP6_E3M2",
@@ -84,8 +84,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.012904125003842637,
-  "fingerprint": "bee3d4c359afcd72"
+  "seconds": 0.16793483300716616,
+  "fingerprint": "51271922e7492709"
  },
  {
   "format": "MXFP6_E2M3",
@@ -106,8 +106,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.002600958017865196,
-  "fingerprint": "66a936ce75167a93"
+  "seconds": 0.09572820801986381,
+  "fingerprint": "7140deaffa998df0"
  },
  {
   "format": "MXFP6_E2M3",
@@ -128,8 +128,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.0026375000015832484,
-  "fingerprint": "dd79b4eda601b5db"
+  "seconds": 0.08152112498646602,
+  "fingerprint": "05adc21fa5b7bbbd"
  },
  {
   "format": "MXFP6_E2M3",
@@ -150,8 +150,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.006574416998773813,
-  "fingerprint": "14f896303bedf237"
+  "seconds": 0.02866366700618528,
+  "fingerprint": "192e6fd12aff4a38"
  },
  {
   "format": "MXFP6_E2M3",
@@ -172,8 +172,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.009897500014631078,
-  "fingerprint": "1cadf31c003496f2"
+  "seconds": 0.021303332992829382,
+  "fingerprint": "9468e71c65e4b50a"
  },
  {
   "format": "MXFP6_E4M1",
@@ -194,8 +194,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.0033091669902205467,
-  "fingerprint": "381eba4f49d5f1fb"
+  "seconds": 0.06322716700378805,
+  "fingerprint": "efafeb88e2af2430"
  },
  {
   "format": "MXFP6_E4M1",
@@ -216,8 +216,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.002497832989320159,
-  "fingerprint": "0b456a2c69ab6edc"
+  "seconds": 0.007403708004858345,
+  "fingerprint": "b3f2f99230ffd918"
  },
  {
   "format": "MXFP6_E4M1",
@@ -238,8 +238,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.004130582994548604,
-  "fingerprint": "b121792b1e60f1ea"
+  "seconds": 0.09820204199058935,
+  "fingerprint": "0f24b14ed2e35042"
  },
  {
   "format": "MXFP6_E4M1",
@@ -260,8 +260,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.009870292007690296,
-  "fingerprint": "6cfe660e5ec798d6"
+  "seconds": 0.01749283299432136,
+  "fingerprint": "aed81d3da0c60f2a"
  },
  {
   "format": "MXINT6",
@@ -282,30 +282,30 @@
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.0015841660206206143,
-  "fingerprint": "905aaa3687da405f"
+  "seconds": 0.025252042018109933,
+  "fingerprint": "35d41f4430ed9833"
  },
  {
   "format": "MXINT6",
   "policy": "ceil",
   "mode": "wx",
-  "y_rel_err": 0.053584692100200004,
-  "y_rel_err_heldout": 0.053998498858294185,
-  "y_sqnr_db": 25.41918520835773,
-  "w_rel_err": 0.04135631613458204,
-  "w_sqnr_db": 27.669163070272965,
-  "y_cos_row_min": 0.9970116663972786,
-  "x_rel_err": 0.0332797044684571,
+  "y_rel_err": 0.052924861797025505,
+  "y_rel_err_heldout": 0.053379485185196675,
+  "y_sqnr_db": 25.526805347651432,
+  "w_rel_err": 0.04111719040205455,
+  "w_sqnr_db": 27.71953137956102,
+  "y_cos_row_min": 0.9970070988665503,
+  "x_rel_err": 0.03238156046257411,
   "n_range": 0,
   "n_saturated": 0,
-  "n_zeroed": 905,
+  "n_zeroed": 902,
   "n_subnormal": 0,
   "n_scale_clamped": 0,
   "bits_per_elem": 6.32,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.003379625006346032,
-  "fingerprint": "f03454711ff6cec7"
+  "seconds": 0.04260812498978339,
+  "fingerprint": "75eb14c87de827ce"
  },
  {
   "format": "MXINT6",
@@ -326,8 +326,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.0021674160088878125,
-  "fingerprint": "0cb4762424d0ed11"
+  "seconds": 0.006923666980583221,
+  "fingerprint": "025ca0a91cd36d96"
  },
  {
   "format": "MXINT6",
@@ -348,8 +348,8 @@
   "bits_per_elem": 6.32,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.026743499998701736,
-  "fingerprint": "237a68845d34e425"
+  "seconds": 0.01524533299379982,
+  "fingerprint": "5ce96b33bbb9aa30"
  },
  {
   "format": "BFP6",
@@ -370,8 +370,8 @@
   "bits_per_elem": 6.28,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.0015979159798007458,
-  "fingerprint": "5def12adee0ed0a9"
+  "seconds": 0.0030927500047255307,
+  "fingerprint": "4b0dbb3ebf1b168b"
  },
  {
   "format": "BFP6",
@@ -392,8 +392,8 @@
   "bits_per_elem": 6.28,
   "n_roundings": 35600,
   "n_macs": 2560000,
-  "seconds": 0.0027460420096758753,
-  "fingerprint": "3cc69b35a1056bcd"
+  "seconds": 0.0821453329990618,
+  "fingerprint": "1bf1eb73b82d596c"
  },
  {
   "format": "BFP6",
@@ -414,8 +414,8 @@
   "bits_per_elem": 6.28,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.008350499992957339,
-  "fingerprint": "91ed45a71423da16"
+  "seconds": 0.01759470798424445,
+  "fingerprint": "01880bce64d7906e"
  },
  {
   "format": "BFP6",
@@ -436,7 +436,7 @@
   "bits_per_elem": 6.28,
   "n_roundings": 142400,
   "n_macs": 2560000,
-  "seconds": 0.011871374998008832,
-  "fingerprint": "74fa6dec5611fdd9"
+  "seconds": 0.017459958005929366,
+  "fingerprint": "9e148e6eec54e3f9"
  }
 ]

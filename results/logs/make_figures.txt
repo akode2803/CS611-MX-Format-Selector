@@ -1,4 +1,4 @@
 $ python make_figures.py
-# exit 0, 1.8 s
+# exit 0, 1.1 s
 
-wrote ['fig1_weight_distribution.png', 'fig2_error_model.png', 'fig3_predicted_vs_exhaustive.png', 'fig4_sensitivity.png', 'fig5_scale_tradeoff.png']
+wrote ['fig10_q3_scale.png', 'fig11_block_tradeoff.png', 'fig1_weight_distribution.png', 'fig2_error_model.png', 'fig3_predicted_vs_exhaustive.png', 'fig4_sensitivity.png', 'fig5_scale_tradeoff.png', 'fig6_selector_accuracy_vs_cost.png', 'fig7_selector_scaling.png', 'fig8_q3_outliers.png', 'fig9_q3_sparsity.png']
